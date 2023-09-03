@@ -1,6 +1,5 @@
 ﻿using BrassLoon.RestClient;
 using GoneViolet.Model;
-using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;

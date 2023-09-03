@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
 using System.CommandLine;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace GoneViolet
@@ -14,17 +15,23 @@ namespace GoneViolet
             AppSettings appSettings = BindAppSettings(
                 LoadConfiguration());
             DependencyInjection.ContainerFactory.Initialize(appSettings);
+
+            if (!string.IsNullOrEmpty(appSettings.WorkingDirectory) && !Directory.Exists(appSettings.WorkingDirectory))
+                Directory.CreateDirectory(appSettings.WorkingDirectory);
+
             Argument<string> channelOption = new Argument<string>(name: "channel");
+            Option<string> pageUrl = new Option<string>(name: "--pageUrl");
             RootCommand rootCommand = new RootCommand
             {
-                channelOption
+                channelOption,
+                pageUrl
             };
             rootCommand.SetHandler(
-                (channelOptionValue) => BeginProcessing(channelOptionValue), channelOption);
+                (channelOptionValue, pageUrlValue) => BeginProcessing(channelOptionValue, pageUrlValue), channelOption, pageUrl);
             await rootCommand.InvokeAsync(args);
         }
 
-        private static async Task BeginProcessing(string channel)
+        private static async Task BeginProcessing(string channel, string pageUrl)
         {
             using (ILifetimeScope scope = DependencyInjection.ContainerFactory.BeginLifetimeScope())
             {
@@ -42,6 +49,11 @@ namespace GoneViolet
                         // quota problems
                         // ChannelReader reader = scope.Resolve<ChannelReader>();
                         // await reader.SearchChannel(channel);
+                    }
+                    if (!string.IsNullOrEmpty(pageUrl))
+                    {
+                        IVideoProcessor processor = scope.Resolve<IVideoProcessor>();
+                        await processor.Process(pageUrl);
                     }
                     logger.LogInformation($"Channel processing ended");
                 }
