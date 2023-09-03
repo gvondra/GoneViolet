@@ -12,6 +12,7 @@ namespace GoneViolet.DependencyInjection
             builder.RegisterType<RestUtil>().SingleInstance();
             builder.RegisterType<Service>().As<IService>();
             builder.RegisterType<YouTubeDataService>().As<IYouTubeDataService>();
+            builder.RegisterType<YouTubeParser>().As<IYouTubeParser>();
         }
     }
 }

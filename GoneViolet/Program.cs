@@ -39,8 +39,9 @@ namespace GoneViolet
                     else
                     {
                         logger.LogInformation($"Channel argument set \"{channel}\"");
-                        ChannelReader reader = scope.Resolve<ChannelReader>();
-                        await reader.SearchChannel(channel);
+                        // quota problems
+                        // ChannelReader reader = scope.Resolve<ChannelReader>();
+                        // await reader.SearchChannel(channel);
                     }
                     logger.LogInformation($"Channel processing ended");
                 }

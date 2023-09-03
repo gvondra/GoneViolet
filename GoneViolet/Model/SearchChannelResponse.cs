@@ -2,11 +2,11 @@
 
 namespace GoneViolet.Model
 {
-    public class ListChannelResponse
+    public class SearchChannelResponse
     {
         public string kind { get; set; }
         public string nextPageToken { get; set; }
         public PageInfo pageInfo { get; set; }
-        public List<dynamic> items { get; set; }
+        public List<SearchChannelResponseItem> items { get; set; }
     }
 }

@@ -2,7 +2,7 @@
 
 namespace GoneViolet.Model
 {
-    public class ListChannelResponseSnippet
+    public class SearchChannelResponseSnippet
     {
         public DateTime? publishedAt { get; set; }
         public string channelId { get; set; }

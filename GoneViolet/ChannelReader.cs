@@ -1,5 +1,6 @@
 ﻿using GoneViolet.Model;
 using Microsoft.Extensions.Logging;
+using System;
 using System.Threading.Tasks;
 
 namespace GoneViolet
@@ -17,9 +18,15 @@ namespace GoneViolet
 
         public async Task SearchChannel(string channel)
         {
-            ListChannelResponseItem funhausChannel = await _youTubeDataService.ListChannel(channel);
-            if (funhausChannel != null)
-                _logger.LogDebug($"Found Channel {funhausChannel.snippet.channelTitle}: {funhausChannel.snippet.description}");
+            SearchChannelResponseItem searchResult = await _youTubeDataService.SearchChannel(
+                channel,
+                (v, i) => string.Equals(v, i.snippet.channelTitle, StringComparison.OrdinalIgnoreCase));
+            if (searchResult != null)
+            {
+                object funhausChannel = await _youTubeDataService.ListChannel(searchResult.snippet.channelId);
+                _logger.LogDebug($"Found Channel {searchResult.snippet.channelTitle}: {searchResult.snippet.description}");
+            }
+                
         }
     }
 }

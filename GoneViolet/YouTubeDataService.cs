@@ -1,7 +1,7 @@
 ﻿using BrassLoon.RestClient;
 using GoneViolet.Model;
 using System;
-using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -24,24 +24,24 @@ namespace GoneViolet
             _restUtil = restUtil;
         }
 
-        public async Task<ListChannelResponseItem> ListChannel(
+        public async Task<SearchChannelResponseItem> SearchChannel(
             string value,
-            Func<string, ListChannelResponseItem, bool> predicate)
+            Func<string, SearchChannelResponseItem, bool> predicate)
         {
-            IRequest request = CreateListChannelRequest(value);
-            ListChannelResponseItem item = null;
-            ListChannelResponse listChannelResponse = await _restUtil.Send<ListChannelResponse>(_service, request);
+            IRequest request = CreateSearchChannelRequest(value);
+            SearchChannelResponseItem item = null;
+            SearchChannelResponse listChannelResponse = await _restUtil.Send<SearchChannelResponse>(_service, request);
             item = listChannelResponse.items.SingleOrDefault(i => predicate(value, i));
             while (item == null && !string.IsNullOrEmpty(listChannelResponse.nextPageToken))
             {
-                request = CreateListChannelRequest(value, listChannelResponse.nextPageToken);
-                listChannelResponse = await _restUtil.Send<ListChannelResponse>(_service, request);
+                request = CreateSearchChannelRequest(value, listChannelResponse.nextPageToken);
+                listChannelResponse = await _restUtil.Send<SearchChannelResponse>(_service, request);
                 item = listChannelResponse.items.SingleOrDefault(i => predicate(value, i));
             }
             return item;
         }
 
-        private IRequest CreateListChannelRequest(string value, string page = null)
+        private IRequest CreateSearchChannelRequest(string value, string page = null)
         {
             IRequest request = _service.CreateRequest(new Uri(_appSettings.YouTubeDataApiBaseAddress), HttpMethod.Get)
                 .AddPath("search")
@@ -50,6 +50,40 @@ namespace GoneViolet
                 .AddQueryParameter("type", "channel")
                 .AddQueryParameter("maxResults", "10")
                 .AddQueryParameter("q", value);
+            if (!string.IsNullOrEmpty(page))
+                request = request.AddQueryParameter("pageToken", page);
+            return request;
+        }
+
+        public async Task<dynamic> ListChannel(string id)
+        {
+            IRequest request = _service.CreateRequest(new Uri(_appSettings.YouTubeDataApiBaseAddress), HttpMethod.Get)
+                .AddPath("channels")
+                .AddQueryParameter("key", _appSettings.GoogleApiKey)
+                .AddQueryParameter("part", "contentDetails,snippet")
+                .AddQueryParameter("maxResults", "10")
+                .AddQueryParameter("id", id);
+            IResponse response = await _service.Send(request);
+            Debug.WriteLine(await response.Message.Content.ReadAsStringAsync());
+            return null;
+        }
+
+        public async Task<dynamic> ListPlaylist(string id)
+        {
+            IRequest request = CreateListPlaylistRequest(id);
+            IResponse response = await _service.Send(request);
+            Debug.WriteLine(await response.Message.Content.ReadAsStringAsync());
+            return null;
+        }
+
+        private IRequest CreateListPlaylistRequest(string id, string page = null)
+        {
+            IRequest request = _service.CreateRequest(new Uri(_appSettings.YouTubeDataApiBaseAddress), HttpMethod.Get)
+                .AddPath("playlistItems")
+                .AddQueryParameter("key", _appSettings.GoogleApiKey)
+                .AddQueryParameter("part", "contentDetails,snippet")
+                .AddQueryParameter("maxResults", "50")
+                .AddQueryParameter("id", id);
             if (!string.IsNullOrEmpty(page))
                 request = request.AddQueryParameter("pageToken", page);
             return request;
