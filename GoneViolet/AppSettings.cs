@@ -6,5 +6,6 @@
         public string GoogleApiKey { get; set; }
         public string YouTubeDataApiBaseAddress { get; set; }
         public string WorkingDirectory { get; set; }
+        public string ChannelDataFile { get; set; }
     }
 }

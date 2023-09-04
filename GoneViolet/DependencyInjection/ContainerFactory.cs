@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Serilog;
 using System;
+using System.Globalization;
 using System.Reflection;
 
 namespace GoneViolet.DependencyInjection
@@ -32,12 +33,13 @@ namespace GoneViolet.DependencyInjection
         {
             LoggerConfiguration loggerConfiguration = new LoggerConfiguration()
                 .MinimumLevel.Debug()
-                .WriteTo.Console();
+                .WriteTo.Console(formatProvider: CultureInfo.InvariantCulture);
             if (!string.IsNullOrEmpty(settings.LogFile))
             {
                 loggerConfiguration.WriteTo.File(
-                    settings.LogFile);
-            };            
+                    settings.LogFile,
+                    formatProvider: CultureInfo.InvariantCulture);
+            }
             builder.Register<ILoggerFactory>(c => LoggerFactory.Create(b =>
             {
                 b.AddSerilog(loggerConfiguration.CreateLogger());

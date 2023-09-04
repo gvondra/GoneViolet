@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using GoneViolet.Model;
+using Microsoft.Extensions.Logging;
+using System.Globalization;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -6,6 +8,8 @@ namespace GoneViolet
 {
     public class VideoProcessor : IVideoProcessor
     {
+
+        private const string _youTubeUrlTemplage = @"https://www.youtube.com/watch?v={0}";
         private readonly AppSettings _appSettings;
         private readonly IVideoDownloader _downloader;
         private readonly IYouTubeParser _youTubeParser;
@@ -23,19 +27,14 @@ namespace GoneViolet
             _logger = logger;
         }
 
-        public async Task Process(string pageUrl)
+        public async Task SetGoogleVideoUrl(Video video)
         {
-            _logger.LogInformation($"Downloading and parsing web page data {pageUrl}");
-            string content = await _downloader.DownloadWebContent(pageUrl);
-            //File.WriteAllText(Path.Combine(_appSettings.WorkingDirectory, "content.html"), content);
-            string videoUrl = _youTubeParser.ParseVideo(content);
-            if (!string.IsNullOrEmpty(videoUrl))
+            if (!string.IsNullOrEmpty(video.VideoId) && string.IsNullOrEmpty(video.GoogleVideoUrl))
             {
-                _logger.LogInformation($"Downloading {videoUrl}");
-                using (FileStream stream = new FileStream(Path.Combine(_appSettings.WorkingDirectory, "video.mp4"), FileMode.Create, FileAccess.Write, FileShare.None))
-                {
-                    await _downloader.Download(videoUrl, stream);
-                }
+                string pageUrl = string.Format(CultureInfo.InvariantCulture, _youTubeUrlTemplage, video.VideoId);
+                _logger.LogInformation($"Downloading and parsing web page data {pageUrl}");
+                string content = await _downloader.DownloadWebContent(pageUrl);
+                video.GoogleVideoUrl = _youTubeParser.ParseVideo(content);
             }
         }
     }

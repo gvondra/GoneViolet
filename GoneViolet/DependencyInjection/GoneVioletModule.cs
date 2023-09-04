@@ -8,6 +8,7 @@ namespace GoneViolet.DependencyInjection
         protected override void Load(ContainerBuilder builder)
         {
             base.Load(builder);
+            builder.RegisterType<ChannelDataService>().As<IChannelDataService>();
             builder.RegisterType<ChannelReader>();
             builder.RegisterType<RestUtil>().SingleInstance();
             builder.RegisterType<Service>().As<IService>();

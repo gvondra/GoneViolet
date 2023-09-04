@@ -1,5 +1,8 @@
-﻿using GoneViolet.Model.YouTube;
+﻿using GoneViolet.Model;
+using GoneViolet.Model.YouTube;
 using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace GoneViolet
@@ -39,9 +42,24 @@ namespace GoneViolet
             return id;
         }
 
-        public async Task GetPlaylistItesm(string id)
+        public async Task GetPlaylistItems(Channel channel)
         {
-            dynamic items = await _youTubeDataService.ListPlaylist(id);
+            List<PlaylistItem> items = await _youTubeDataService.ListPlaylist(channel.PlaylistId);
+            foreach (PlaylistItem item in items)
+            {
+                Video video = channel.Videos.SingleOrDefault(v => string.Equals(v.VideoId, item.snippet.resourceId.videoId, StringComparison.OrdinalIgnoreCase));
+                if (video == null)
+                {
+                    video = new Video()
+                    {
+                        PublishedTimestammp = item.snippet.publishedAt,
+                        VideoId = item.snippet.resourceId.videoId
+                    };
+                    channel.Videos.Add(video);
+                }
+                video.Title = item.snippet.title;
+            }
+            channel.YouTubDataTimestamp = DateTime.UtcNow;
         }
     }
 }
