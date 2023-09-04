@@ -1,5 +1,5 @@
 ﻿using BrassLoon.RestClient;
-using GoneViolet.Model;
+using GoneViolet.Model.YouTube;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;

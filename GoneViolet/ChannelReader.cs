@@ -1,4 +1,4 @@
-﻿using GoneViolet.Model;
+﻿using GoneViolet.Model.YouTube;
 using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
 

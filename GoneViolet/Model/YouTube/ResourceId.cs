@@ -1,4 +1,4 @@
-﻿namespace GoneViolet.Model
+﻿namespace GoneViolet.Model.YouTube
 {
     public class ResourceId
     {

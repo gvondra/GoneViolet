@@ -1,12 +1,12 @@
 ﻿using System.Collections.Generic;
 
-namespace GoneViolet.Model
+namespace GoneViolet.Model.YouTube
 {
-    public class SearchChannelResponse
+    public class ListChannelResponse
     {
         public string kind { get; set; }
         public string nextPageToken { get; set; }
         public PageInfo pageInfo { get; set; }
-        public List<SearchChannelResponseItem> items { get; set; }
+        public List<ListChannelResponseItem> items { get; set; }
     }
 }

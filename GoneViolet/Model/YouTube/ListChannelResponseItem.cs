@@ -1,8 +1,8 @@
-﻿namespace GoneViolet.Model
+﻿namespace GoneViolet.Model.YouTube
 {
     public class ListChannelResponseItem
     {
-        public string kind {  get; set; }
+        public string kind { get; set; }
         public string id { get; set; }
         public ContentDetails contentDetails { get; set; }
 

@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace GoneViolet.Model
+namespace GoneViolet.Model.YouTube
 {
     public class ListPlaylistResponse
     {
