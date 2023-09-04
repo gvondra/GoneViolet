@@ -1,6 +1,7 @@
 ﻿using Jint;
 using Jint.Native.Array;
 using Jint.Native.Object;
+using System.Globalization;
 using System.Text.RegularExpressions;
 using System.Web;
 
@@ -47,7 +48,7 @@ namespace GoneViolet
                         .AsArray();
                     for (int i = 0; i < formats.GetLength(); i += 1)
                     {
-                        ObjectInstance format = formats.Get(i.ToString()).AsObject();
+                        ObjectInstance format = formats.Get(i.ToString(CultureInfo.InvariantCulture)).AsObject();
                         if (string.IsNullOrEmpty(quality) || string.Equals(format.Get("quality").AsString(), "hd720", StringComparison.OrdinalIgnoreCase))
                         {
                             quality = format.Get("quality").AsString();

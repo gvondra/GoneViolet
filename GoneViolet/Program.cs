@@ -41,7 +41,7 @@ namespace GoneViolet
             {
                 ILogger logger = scope.Resolve<Func<string, ILogger>>()("Program");
                 try
-                {   
+                {
                     logger.LogInformation($"Channel processing started");
                     if (string.IsNullOrEmpty(channel))
                     {
