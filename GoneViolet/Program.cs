@@ -1,14 +1,13 @@
 ﻿using Autofac;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using System;
 using System.CommandLine;
 using System.IO;
 using System.Threading.Tasks;
 
 namespace GoneViolet
 {
-    public class Program
+    public static class Program
     {
         public static async Task Main(string[] args)
         {
@@ -20,18 +19,23 @@ namespace GoneViolet
                 Directory.CreateDirectory(appSettings.WorkingDirectory);
 
             Argument<string> channelOption = new Argument<string>(name: "channel");
+            Option<string> channelId = new Option<string>(name: "--channel-id");
+            Option<string> playlistId = new Option<string>(name: "--playlist-id");
             Option<string> pageUrl = new Option<string>(name: "--pageUrl");
             RootCommand rootCommand = new RootCommand
             {
                 channelOption,
+                channelId,
+                playlistId,
                 pageUrl
             };
             rootCommand.SetHandler(
-                (channelOptionValue, pageUrlValue) => BeginProcessing(channelOptionValue, pageUrlValue), channelOption, pageUrl);
+                (channelOptionValue, channelIdValue, playlistIdValue, pageUrlValue)
+                => BeginProcessing(channelOptionValue, channelIdValue, playlistIdValue, pageUrlValue), channelOption, channelId, playlistId, pageUrl);
             await rootCommand.InvokeAsync(args);
         }
 
-        private static async Task BeginProcessing(string channel, string pageUrl)
+        private static async Task BeginProcessing(string channel, string channelId, string playlistId, string pageUrl)
         {
             using (ILifetimeScope scope = DependencyInjection.ContainerFactory.BeginLifetimeScope())
             {
@@ -46,9 +50,10 @@ namespace GoneViolet
                     else
                     {
                         logger.LogInformation($"Channel argument set \"{channel}\"");
-                        // quota problems
-                        // ChannelReader reader = scope.Resolve<ChannelReader>();
-                        // await reader.SearchChannel(channel);
+                        ChannelReader reader = scope.Resolve<ChannelReader>();
+                        if (string.IsNullOrEmpty(playlistId))
+                            playlistId = await reader.SearchChannelPlaylistId(channel, channelId);
+                        await reader.GetPlaylistItesm(playlistId);
                     }
                     if (!string.IsNullOrEmpty(pageUrl))
                     {

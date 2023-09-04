@@ -28,10 +28,7 @@ namespace GoneViolet
 
         public async Task Download(string url, Stream output)
         {
-            IRequest request = _service.CreateRequest(new Uri(url), HttpMethod.Get);
-            IResponse response = await _service.Send(request);
-            _restUtil.CheckSuccess(response);
-            using (Stream stream = await response.Message.Content.ReadAsStreamAsync())
+            using (Stream stream = await _service.GetStream(new Uri(url), TimeSpan.FromMinutes(30)))
             {
                 await stream.CopyToAsync(output);
             }

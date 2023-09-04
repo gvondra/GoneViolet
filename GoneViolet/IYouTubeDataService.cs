@@ -1,5 +1,5 @@
 ﻿using GoneViolet.Model;
-using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace GoneViolet
@@ -7,6 +7,7 @@ namespace GoneViolet
     public interface IYouTubeDataService
     {
         Task<SearchChannelResponseItem> SearchChannel(string value, Func<string, SearchChannelResponseItem, bool> predicate);
-        Task<dynamic> ListChannel(string id);
+        Task<ListChannelResponse> ListChannel(string id);
+        Task<List<PlaylistItem>> ListPlaylist(string id);
     }
 }

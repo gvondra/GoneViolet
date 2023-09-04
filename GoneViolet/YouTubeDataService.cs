@@ -1,5 +1,6 @@
 ﻿using BrassLoon.RestClient;
 using GoneViolet.Model;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
@@ -54,25 +55,31 @@ namespace GoneViolet
             return request;
         }
 
-        public async Task<dynamic> ListChannel(string id)
+        public Task<ListChannelResponse> ListChannel(string id)
         {
             IRequest request = _service.CreateRequest(new Uri(_appSettings.YouTubeDataApiBaseAddress), HttpMethod.Get)
                 .AddPath("channels")
                 .AddQueryParameter("key", _appSettings.GoogleApiKey)
-                .AddQueryParameter("part", "contentDetails,snippet")
+                .AddQueryParameter("part", "contentDetails")
                 .AddQueryParameter("maxResults", "10")
                 .AddQueryParameter("id", id);
-            IResponse response = await _service.Send(request);
-            Debug.WriteLine(await response.Message.Content.ReadAsStringAsync());
-            return null;
+            return _restUtil.Send<ListChannelResponse>(_service, request);
         }
 
-        public async Task<dynamic> ListPlaylist(string id)
+        public async Task<List<PlaylistItem>> ListPlaylist(string id)
         {
             IRequest request = CreateListPlaylistRequest(id);
-            IResponse response = await _service.Send(request);
-            Debug.WriteLine(await response.Message.Content.ReadAsStringAsync());
-            return null;
+            IResponse<ListPlaylistResponse> response = await _service.Send<ListPlaylistResponse>(request);
+            _restUtil.CheckSuccess(response);
+            List<PlaylistItem> items = new List<PlaylistItem>(response.Value.items);
+            //while (!string.IsNullOrEmpty(response.Value.nextPageToken))
+            //{
+            //    request = CreateListPlaylistRequest(id, response.Value.nextPageToken);
+            //    response = await _service.Send<ListPlaylistResponse>(request);
+            //    _restUtil.CheckSuccess(response);
+            //    items.AddRange(response.Value.items);
+            //}
+            return items;
         }
 
         private IRequest CreateListPlaylistRequest(string id, string page = null)
@@ -80,9 +87,9 @@ namespace GoneViolet
             IRequest request = _service.CreateRequest(new Uri(_appSettings.YouTubeDataApiBaseAddress), HttpMethod.Get)
                 .AddPath("playlistItems")
                 .AddQueryParameter("key", _appSettings.GoogleApiKey)
-                .AddQueryParameter("part", "contentDetails,snippet")
+                .AddQueryParameter("part", "snippet")
                 .AddQueryParameter("maxResults", "50")
-                .AddQueryParameter("id", id);
+                .AddQueryParameter("playlistId", id);
             if (!string.IsNullOrEmpty(page))
                 request = request.AddQueryParameter("pageToken", page);
             return request;

@@ -1,7 +1,6 @@
 ﻿using Jint;
 using Jint.Native.Array;
 using Jint.Native.Object;
-using Microsoft.Extensions.Logging;
 using System.Text.RegularExpressions;
 using System.Web;
 
@@ -9,12 +8,12 @@ namespace GoneViolet
 {
     public class YouTubeParser : IYouTubeParser
     {
-        private readonly ILogger<YouTubeParser> _logger;
+        //private readonly ILogger<YouTubeParser> _logger;
 
-        public YouTubeParser(ILogger<YouTubeParser> logger)
-        {
-            _logger = logger;
-        }
+        //public YouTubeParser(ILogger<YouTubeParser> logger)
+        //{
+        //    _logger = logger;
+        //}
 
         public string ParseVideo(string content)
         {

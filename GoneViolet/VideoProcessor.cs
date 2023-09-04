@@ -9,7 +9,7 @@ namespace GoneViolet
         private readonly AppSettings _appSettings;
         private readonly IVideoDownloader _downloader;
         private readonly IYouTubeParser _youTubeParser;
-        private ILogger<VideoProcessor> _logger;
+        private readonly ILogger<VideoProcessor> _logger;
 
         public VideoProcessor(
             AppSettings appSettings,
