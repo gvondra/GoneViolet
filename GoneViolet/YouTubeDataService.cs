@@ -1,7 +1,6 @@
 ﻿using BrassLoon.RestClient;
 using GoneViolet.Model.YouTube;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;

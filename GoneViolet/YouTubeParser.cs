@@ -2,6 +2,7 @@
 using Jint.Native.Array;
 using Jint.Native.Object;
 using System.Globalization;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Web;
 
@@ -25,10 +26,10 @@ namespace GoneViolet
                 @"<\s*(script)[^>]*?(?!=/)>(.*?)</\s*(\1)[^>]*?>",
                 RegexOptions.IgnoreCase,
                 TimeSpan.FromMilliseconds(200));
-            foreach (Match match in matches)
+            foreach (Match match in matches.Cast<Match>())
             {
                 string decodedScript = HttpUtility.HtmlDecode(match.Groups[2].Value);
-                if (!string.IsNullOrEmpty(match.Groups[2].Value) 
+                if (!string.IsNullOrEmpty(match.Groups[2].Value)
                     && Regex.IsMatch(
                         decodedScript,
                         @"^\s*var\s*ytInitialPlayerResponse\b",
@@ -41,7 +42,7 @@ namespace GoneViolet
                     TimeSpan.FromMilliseconds(250)))
                 {
                     //_logger.LogDebug(decodedScript);
-                    ArrayInstance formats = new Engine()                                                
+                    ArrayInstance formats = new Engine()
                         .Execute(decodedScript)
                         .Execute("var formats = ytInitialPlayerResponse.streamingData.formats;")
                         .GetValue("formats")
@@ -54,7 +55,7 @@ namespace GoneViolet
                             quality = format.Get("quality").AsString();
                             url = format.Get("url").AsString();
                         }
-                    }                    
+                    }
                 }
             }
             return url;

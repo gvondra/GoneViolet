@@ -28,7 +28,7 @@ namespace GoneViolet
                     (v, i) => string.Equals(v, i.snippet.channelTitle, StringComparison.OrdinalIgnoreCase));
                 if (searchResult != null)
                 {
-                    _logger.LogInformation($"Search Found Channel {searchResult.snippet.channelTitle}: {searchResult.snippet.description}");                    
+                    _logger.LogInformation($"Search Found Channel {searchResult.snippet.channelTitle}: {searchResult.snippet.description}");
                     channelId = searchResult.snippet.channelId;
                 }
             }

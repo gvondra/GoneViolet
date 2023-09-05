@@ -1,7 +1,6 @@
 ﻿using Autofac;
 using Microsoft.Extensions.Logging;
 using Serilog;
-using System;
 using System.Globalization;
 using System.Reflection;
 
@@ -19,11 +18,11 @@ namespace GoneViolet.DependencyInjection
         public static void Initialize(
             AppSettings appSettings = null)
         {
-            ContainerBuilder builder = new ContainerBuilder();       
+            ContainerBuilder builder = new ContainerBuilder();
             builder.RegisterModule(new GoneVioletModule());
             if (appSettings != null)
             {
-                builder.RegisterInstance<AppSettings>(appSettings);
+                builder.RegisterInstance(appSettings);
                 RegisterLogging(builder, appSettings);
             }
             _container = builder.Build();
@@ -40,7 +39,7 @@ namespace GoneViolet.DependencyInjection
                     settings.LogFile,
                     formatProvider: CultureInfo.InvariantCulture);
             }
-            builder.Register<ILoggerFactory>(c => LoggerFactory.Create(b =>
+            builder.Register(c => LoggerFactory.Create(b =>
             {
                 b.AddSerilog(loggerConfiguration.CreateLogger());
             })).SingleInstance();
