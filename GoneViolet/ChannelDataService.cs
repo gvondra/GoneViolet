@@ -10,28 +10,29 @@ namespace GoneViolet
     public class ChannelDataService : IChannelDataService
     {
         private readonly AppSettings _appSettings;
+        private readonly IBlob _blob;
 
-        public ChannelDataService(AppSettings appSettings)
+        public ChannelDataService(AppSettings appSettings, IBlob blob)
         {
             _appSettings = appSettings;
+            _blob = blob;
         }
 
-        public Task<Channel> GetChannel()
+        public async Task<Channel> GetChannel()
         {
-            Channel channel;
-            if (!string.IsNullOrEmpty(_appSettings.ChannelDataFile) && File.Exists(_appSettings.ChannelDataFile))
+            Channel channel = null;
+            if (!string.IsNullOrEmpty(_appSettings.ChannelDataFile))
             {
-                JsonSerializer serializer = JsonSerializer.Create(SerializerSettings());
-                using FileStream fileStream = new FileStream(_appSettings.ChannelDataFile, FileMode.Open, FileAccess.Read, FileShare.Read);
-                using StreamReader streamReader = new StreamReader(fileStream, SerializerEncoding());
-                using JsonTextReader jsonTextReader = new JsonTextReader(streamReader);
-                channel = serializer.Deserialize<Channel>(jsonTextReader);
+                using Stream blobStream = await _blob.Download(_appSettings, _appSettings.ChannelDataFile);
+                if (blobStream != null)
+                {
+                    JsonSerializer serializer = JsonSerializer.Create(SerializerSettings());
+                    using StreamReader streamReader = new StreamReader(blobStream, SerializerEncoding());
+                    using JsonTextReader jsonTextReader = new JsonTextReader(streamReader);
+                    channel = serializer.Deserialize<Channel>(jsonTextReader);
+                }
             }
-            else
-            {
-                channel = new Channel();
-            }
-            return Task.FromResult(channel);
+            return channel ?? new Channel();
         }
 
         private static Encoding SerializerEncoding() => new UTF8Encoding(false);
@@ -45,17 +46,16 @@ namespace GoneViolet
             return settings;
         }
 
-        public Task SaveChannel(Channel channel)
+        public async Task SaveChannel(Channel channel)
         {
             if (!string.IsNullOrEmpty(_appSettings.ChannelDataFile))
             {
                 JsonSerializer serializer = JsonSerializer.Create(SerializerSettings());
-                using FileStream fileStream = new FileStream(_appSettings.ChannelDataFile, FileMode.Create, FileAccess.Write, FileShare.None);
-                using StreamWriter streamWriter = new StreamWriter(fileStream, SerializerEncoding());
+                using Stream blobStream = await _blob.OpenWrite(_appSettings, _appSettings.ChannelDataFile, contentType: "application/json");
+                using StreamWriter streamWriter = new StreamWriter(blobStream, SerializerEncoding());
                 using JsonTextWriter jsonTextWriter = new JsonTextWriter(streamWriter);
                 serializer.Serialize(jsonTextWriter, channel);
             }
-            return Task.CompletedTask;
         }
     }
 }
