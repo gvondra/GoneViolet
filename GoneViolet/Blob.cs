@@ -1,6 +1,7 @@
 ﻿using Azure;
 using Azure.Identity;
 using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -8,13 +9,24 @@ namespace GoneViolet
 {
     public class Blob : IBlob
     {
-        public Task<Stream> OpenWrite(AppSettings settings, string name)
+        public Task<Stream> OpenWrite(
+            AppSettings settings,
+            string name,
+            string contentType = null)
         {
             BlobContainerClient containerClient = new BlobContainerClient(
                 new Uri(settings.VideoDataContainerUrl),
                 new DefaultAzureCredential());
             BlobClient blobClient = containerClient.GetBlobClient(name);
-            return blobClient.OpenWriteAsync(true);
+            BlobOpenWriteOptions options = new BlobOpenWriteOptions();
+            if (!string.IsNullOrEmpty(contentType))
+            {
+                options.HttpHeaders = new BlobHttpHeaders()
+                {
+                    ContentType = contentType
+                };
+            }
+            return blobClient.OpenWriteAsync(true, options);
         }
 
         public async Task Upload(AppSettings settings, string name, Stream stream)

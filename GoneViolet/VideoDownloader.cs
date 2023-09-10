@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 namespace GoneViolet
 {
     public class VideoDownloader : IVideoDownloader
-    {   
+    {
         private readonly IService _service;
         private readonly RestUtil _restUtil;
 
