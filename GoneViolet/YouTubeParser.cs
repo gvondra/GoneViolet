@@ -10,13 +10,6 @@ namespace GoneViolet
 {
     public class YouTubeParser : IYouTubeParser
     {
-        //private readonly ILogger<YouTubeParser> _logger;
-
-        //public YouTubeParser(ILogger<YouTubeParser> logger)
-        //{
-        //    _logger = logger;
-        //}
-
         public string ParseVideo(string content)
         {
             string url = string.Empty;
