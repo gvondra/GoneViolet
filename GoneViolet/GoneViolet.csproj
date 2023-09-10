@@ -35,6 +35,8 @@
 
 	<ItemGroup>
 		<PackageReference Include="Autofac" Version="7.1.*" />
+		<PackageReference Include="Azure.Identity" Version="1.10.*" />
+		<PackageReference Include="Azure.Storage.Blobs" Version="12.17.*" />
 		<PackageReference Include="BrassLoon.RestClient" Version="4.1.0-prerelease.*" />
 		<PackageReference Include="Jint" Version="2.11.58" />
 		<PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.*" />

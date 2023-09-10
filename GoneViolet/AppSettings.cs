@@ -1,6 +1,4 @@
-﻿using System.Threading;
-
-namespace GoneViolet
+﻿namespace GoneViolet
 {
     public class AppSettings
     {
@@ -10,5 +8,6 @@ namespace GoneViolet
         public string YouTubeUrlTemplate { get; set; }
         public string WorkingDirectory { get; set; }
         public string ChannelDataFile { get; set; }
+        public string VideoDataContainerUrl { get; set; }
     }
 }

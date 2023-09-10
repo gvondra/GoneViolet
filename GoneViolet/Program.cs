@@ -2,6 +2,8 @@
 using GoneViolet.Model;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using System.Collections;
+using System.Collections.Generic;
 using System.CommandLine;
 using System.IO;
 using System.Linq;
@@ -59,12 +61,25 @@ namespace GoneViolet
                         channel.Id = channelId;
                         channel.PlaylistId = playlistId;
                         if ((channel.YouTubDataTimestamp ?? DateTime.MinValue).ToUniversalTime() < DateTime.UtcNow.AddHours(-24))
-                            await reader.GetPlaylistItems(channel);
-                        IVideoProcessor videoProcessor = scope.Resolve<IVideoProcessor>();
-                        foreach (Video video in channel.Videos.Where(v => !string.IsNullOrEmpty(v.VideoId) && string.IsNullOrEmpty(v.GoogleVideoUrl)))
                         {
-                            await videoProcessor.SetGoogleVideoUrl(video);
+                            await reader.GetPlaylistItems(channel);
+                            await channelDataService.SaveChannel(channel);
                         }
+                        IVideoProcessor videoProcessor = scope.Resolve<IVideoProcessor>();
+                        Queue<Task> tasks = new Queue<Task>();
+                        foreach (Video video in channel.Videos.Where(v => !string.IsNullOrEmpty(v.VideoId) && !v.IsStored))
+                        {
+                            while (tasks.Count >= 2)
+                            {
+                                await tasks.Dequeue();
+                                await channelDataService.SaveChannel(channel);
+                            }
+                            tasks.Enqueue(Task.Run(async () =>
+                            {
+                                await videoProcessor.SaveGoogleVideo(video);
+                            }));
+                        }
+                        await Task.WhenAll(tasks);
                         await channelDataService.SaveChannel(channel);
                     }
                     logger.LogInformation($"Channel processing ended");
