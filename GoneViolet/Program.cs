@@ -2,11 +2,12 @@
 using GoneViolet.Model;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.CommandLine;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
 namespace GoneViolet
@@ -66,21 +67,7 @@ namespace GoneViolet
                             await channelDataService.SaveChannel(channel);
                         }
                         IVideoProcessor videoProcessor = scope.Resolve<IVideoProcessor>();
-                        Queue<Task> tasks = new Queue<Task>();
-                        foreach (Video video in channel.Videos.Where(v => !string.IsNullOrEmpty(v.VideoId) && !v.IsStored))
-                        {
-                            while (tasks.Count >= 2)
-                            {
-                                await tasks.Dequeue();
-                                await channelDataService.SaveChannel(channel);
-                            }
-                            tasks.Enqueue(Task.Run(async () =>
-                            {
-                                await videoProcessor.SaveGoogleVideo(video);
-                            }));
-                        }
-                        await Task.WhenAll(tasks);
-                        await channelDataService.SaveChannel(channel);
+                        await DownloadVideos(channel, videoProcessor, channelDataService);
                     }
                     logger.LogInformation($"Channel processing ended");
                 }
@@ -89,6 +76,30 @@ namespace GoneViolet
                     logger.LogError(ex, ex.Message);
                 }
             }
+        }
+
+        private static async Task DownloadVideos(Channel channel, IVideoProcessor videoProcessor, IChannelDataService channelDataService)
+        {
+            static async Task SaveVideos(ConcurrentQueue<Video> videos, Channel channel, IVideoProcessor videoProcessor, IChannelDataService channelDataService)
+            {
+                Video video;
+                while (videos.TryDequeue(out video))
+                {
+                    await videoProcessor.SaveGoogleVideo(video);
+                    lock (channel)
+                    {
+                        channelDataService.SaveChannel(channel).Wait();
+                    }
+                }
+            }
+            ConcurrentQueue<Video> videos = new ConcurrentQueue<Video>(channel.Videos.Where(v => !string.IsNullOrEmpty(v.VideoId) && !v.IsStored));
+            List<Task> tasks = new List<Task>();
+            for (int i = 0; i < 2; i += 1)
+            {
+                tasks.Add(Task.Run(() => SaveVideos(videos, channel, videoProcessor, channelDataService)));
+            }
+            await SaveVideos(videos, channel, videoProcessor, channelDataService);
+            await Task.WhenAll(tasks);
         }
 
         private static IConfiguration LoadConfiguration()

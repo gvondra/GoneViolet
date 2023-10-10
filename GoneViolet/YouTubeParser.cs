@@ -1,4 +1,5 @@
 ﻿using Jint;
+using Jint.Native;
 using Jint.Native.Array;
 using Jint.Native.Object;
 using System.Globalization;
@@ -35,18 +36,22 @@ namespace GoneViolet
                     TimeSpan.FromMilliseconds(250)))
                 {
                     //_logger.LogDebug(decodedScript);
-                    ArrayInstance formats = new Engine()
+                    JsValue formats = new Engine()
                         .Execute(decodedScript)
                         .Execute("var formats = ytInitialPlayerResponse.streamingData.formats;")
-                        .GetValue("formats")
-                        .AsArray();
-                    for (int i = 0; i < formats.GetLength(); i += 1)
+                        .GetValue("formats");
+
+                    if (formats != null && formats.IsArray())
                     {
-                        ObjectInstance format = formats.Get(i.ToString(CultureInfo.InvariantCulture)).AsObject();
-                        if (string.IsNullOrEmpty(quality) || string.Equals(format.Get("quality").AsString(), "hd720", StringComparison.OrdinalIgnoreCase))
+                        ArrayInstance formatsArray = formats.AsArray();
+                        for (int i = 0; i < formatsArray.GetLength(); i += 1)
                         {
-                            quality = format.Get("quality").AsString();
-                            url = format.Get("url").AsString();
+                            ObjectInstance format = formatsArray.Get(i.ToString(CultureInfo.InvariantCulture)).AsObject();
+                            if (string.IsNullOrEmpty(quality) || string.Equals(format.Get("quality").AsString(), "hd720", StringComparison.OrdinalIgnoreCase))
+                            {
+                                quality = format.Get("quality").AsString();
+                                url = format.Get("url").AsString();
+                            }
                         }
                     }
                 }

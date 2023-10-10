@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using System.Globalization;
 using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace GoneViolet
@@ -37,6 +38,16 @@ namespace GoneViolet
                 _logger.LogInformation($"Downloading and parsing web page data {pageUrl}");
                 string content = await _downloader.DownloadWebContent(pageUrl);
                 url = _youTubeParser.ParseVideo(content);
+                if (string.IsNullOrEmpty(url))
+                {
+                    using (FileStream fileStream = new FileStream(Path.Combine(_appSettings.WorkingDirectory, video.VideoId + ".html"), FileMode.Create, FileAccess.Write, FileShare.Read))
+                    {
+                        using (StreamWriter writer = new StreamWriter(fileStream, Encoding.UTF8))
+                        {
+                            writer.Write(content);
+                        }
+                    }
+                }
             }
             return url;
         }
@@ -46,11 +57,18 @@ namespace GoneViolet
             try
             {
                 string googleVideoUrl = await GetGoogleVideoUrl(video);
-                video.BlobName = $"videos/{video.VideoId}.mp4";
-                _logger.LogInformation($"Downloading video {video.Title} to blob {video.BlobName}");
-                using Stream blobStream = await _blob.OpenWrite(_appSettings, video.BlobName, contentType: "video/mp4");
-                await _downloader.Download(googleVideoUrl, blobStream);
-                video.IsStored = true;
+                if (!string.IsNullOrEmpty(googleVideoUrl))
+                {
+                    video.BlobName = $"videos/{video.VideoId}.mp4";
+                    _logger.LogInformation($"Downloading video {video.Title} to blob {video.BlobName}");
+                    using Stream blobStream = await _blob.OpenWrite(_appSettings, video.BlobName, contentType: "video/mp4");
+                    await _downloader.Download(googleVideoUrl, blobStream);
+                    video.IsStored = true;
+                }
+                else
+                {
+                    _logger.LogWarning($"Video url not found for \"{video.Title}\"");
+                }
             }
             catch (Exception ex)
             {
