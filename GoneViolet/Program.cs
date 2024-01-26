@@ -32,8 +32,7 @@ namespace GoneViolet
                 playlistId
             };
             rootCommand.SetHandler(
-                (channelOptionValue, channelIdValue, playlistIdValue)
-                => BeginProcessing(channelOptionValue, channelIdValue, playlistIdValue), channelOption, channelId, playlistId);
+                BeginProcessing, channelOption, channelId, playlistId);
             await rootCommand.InvokeAsync(args);
         }
 
@@ -62,6 +61,7 @@ namespace GoneViolet
                         channel.PlaylistId = playlistId;
                         if ((channel.YouTubDataTimestamp ?? DateTime.MinValue).ToUniversalTime() < DateTime.UtcNow.AddHours(-24))
                         {
+                            // every 24 hours refresh the the list of videos from the YouTube playlist
                             await reader.GetPlaylistItems(channel);
                             await channelDataService.SaveChannel(channel);
                         }
@@ -95,7 +95,7 @@ namespace GoneViolet
             List<Task> tasks = new List<Task>();
             for (int i = 0; i < 2; i += 1)
             {
-                tasks.Add(Task.Run(() => SaveVideos(videos, channel, videoProcessor, channelDataService)));
+                tasks.Add(Task.Run(() => SaveVideos(videos, channel, videoProcessor, channelDataService).Wait()));
             }
             await SaveVideos(videos, channel, videoProcessor, channelDataService);
             await Task.WhenAll(tasks);

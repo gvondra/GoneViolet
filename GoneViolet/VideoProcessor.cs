@@ -40,6 +40,7 @@ namespace GoneViolet
                 url = _youTubeParser.ParseVideo(content);
                 if (string.IsNullOrEmpty(url))
                 {
+                    // if we don't find the url, write the html to a file, so we can manually analyze it
                     using (FileStream fileStream = new FileStream(Path.Combine(_appSettings.WorkingDirectory, video.VideoId + ".html"), FileMode.Create, FileAccess.Write, FileShare.Read))
                     {
                         using (StreamWriter writer = new StreamWriter(fileStream, Encoding.UTF8))

@@ -23,6 +23,7 @@ namespace GoneViolet
             string id = null;
             if (string.IsNullOrEmpty(channelId))
             {
+                // search for a youtube channel by name
                 SearchChannelResponseItem searchResult = await _youTubeDataService.SearchChannel(
                     channel,
                     (v, i) => string.Equals(v, i.snippet.channelTitle, StringComparison.OrdinalIgnoreCase));
@@ -34,10 +35,11 @@ namespace GoneViolet
             }
             if (!string.IsNullOrEmpty(channelId))
             {
+                // find the id of the "uploads" playlist
                 _logger.LogDebug($"Listing Channel with id {channelId}");
-                ListChannelResponse funhausChannel = await _youTubeDataService.ListChannel(channelId);
-                _logger.LogInformation($"Channel uploads play list {funhausChannel.items[0].contentDetails.relatedPlaylists.uploads}");
-                id = funhausChannel.items[0].contentDetails.relatedPlaylists.uploads;
+                ListChannelResponse targetChannel = await _youTubeDataService.ListChannel(channelId);
+                _logger.LogInformation($"Channel uploads play list {targetChannel.items[0].contentDetails.relatedPlaylists.uploads}");
+                id = targetChannel.items[0].contentDetails.relatedPlaylists.uploads;
             }
             return id;
         }

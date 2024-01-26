@@ -7,6 +7,9 @@ using System.Threading.Tasks;
 
 namespace GoneViolet
 {
+    // the channel data is stored as json file in the root of the blob container
+    // the get method reads and deserializes the file
+    // the save method serializes the channel data and saves the file
     public class ChannelDataService : IChannelDataService
     {
         private readonly AppSettings _appSettings;
@@ -35,7 +38,7 @@ namespace GoneViolet
             return channel ?? new Channel();
         }
 
-        private static Encoding SerializerEncoding() => new UTF8Encoding(false);
+        private static UTF8Encoding SerializerEncoding() => new UTF8Encoding(false);
 
         private static JsonSerializerSettings SerializerSettings()
         {
