@@ -36,7 +36,7 @@ namespace GoneViolet
             if (!string.IsNullOrEmpty(content) && !string.IsNullOrEmpty(videoId))
             {
                 url = _youTubeParser.ParseVideo(content);
-                if (string.IsNullOrEmpty(url))
+                if (string.IsNullOrEmpty(url) && !string.IsNullOrEmpty(_appSettings.WorkingDirectory) && Directory.Exists(_appSettings.WorkingDirectory))
                 {
                     // if we don't find the url, write the html to a file, so we can manually analyze it
                     using (FileStream fileStream = new FileStream(Path.Combine(_appSettings.WorkingDirectory, videoId + ".html"), FileMode.Create, FileAccess.Write, FileShare.Read))
