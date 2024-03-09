@@ -9,5 +9,6 @@
         public string WorkingDirectory { get; set; }
         public string ChannelDataFile { get; set; }
         public string VideoDataContainerUrl { get; set; }
+        public string BlobNameTemplate { get; set; }
     }
 }

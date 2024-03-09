@@ -66,7 +66,8 @@ namespace GoneViolet
                 }
                 if (!string.IsNullOrEmpty(googleVideoUrl))
                 {
-                    video.BlobName = $"videos/{video.VideoId}.mp4";
+                    string blobNameTemplate = !string.IsNullOrEmpty(_appSettings.BlobNameTemplate) ? _appSettings.BlobNameTemplate : @"videos/{0}.mp4";
+                    video.BlobName = string.Format(CultureInfo.InvariantCulture, blobNameTemplate, video.VideoId);
                     _logger.LogInformation($"Downloading video {video.Title} to blob {video.BlobName}");
                     using Stream blobStream = await _blob.OpenWrite(_appSettings, video.BlobName, contentType: "video/mp4");
                     await _downloader.Download(googleVideoUrl, blobStream);
