@@ -1,5 +1,6 @@
 ﻿using GoneViolet.Model;
 using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text;
@@ -29,19 +30,16 @@ namespace GoneViolet
             _blob = blob;
         }
 
-        private async Task<string> GetGoogleVideoUrl(Video video)
+        private string GetGoogleVideoUrl(string content, string videoId)
         {
             string url = null;
-            if (!string.IsNullOrEmpty(video.VideoId))
+            if (!string.IsNullOrEmpty(content) && !string.IsNullOrEmpty(videoId))
             {
-                string pageUrl = string.Format(CultureInfo.InvariantCulture, _appSettings.YouTubeUrlTemplate, video.VideoId);
-                _logger.LogInformation($"Downloading and parsing web page data {pageUrl}");
-                string content = await _downloader.DownloadWebContent(pageUrl);
                 url = _youTubeParser.ParseVideo(content);
                 if (string.IsNullOrEmpty(url))
                 {
                     // if we don't find the url, write the html to a file, so we can manually analyze it
-                    using (FileStream fileStream = new FileStream(Path.Combine(_appSettings.WorkingDirectory, video.VideoId + ".html"), FileMode.Create, FileAccess.Write, FileShare.Read))
+                    using (FileStream fileStream = new FileStream(Path.Combine(_appSettings.WorkingDirectory, videoId + ".html"), FileMode.Create, FileAccess.Write, FileShare.Read))
                     {
                         using (StreamWriter writer = new StreamWriter(fileStream, Encoding.UTF8))
                         {
@@ -57,7 +55,15 @@ namespace GoneViolet
         {
             try
             {
-                string googleVideoUrl = await GetGoogleVideoUrl(video);
+                string googleVideoUrl = null;
+                if (!string.IsNullOrEmpty(video.VideoId))
+                {
+                    string pageUrl = string.Format(CultureInfo.InvariantCulture, _appSettings.YouTubeUrlTemplate, video.VideoId);
+                    _logger.LogInformation($"Downloading and parsing web page data {pageUrl}");
+                    string content = await _downloader.DownloadWebContent(pageUrl);
+                    googleVideoUrl = GetGoogleVideoUrl(content, video.VideoId);
+                    video.Tags = _youTubeParser.GetTags(content);
+                }
                 if (!string.IsNullOrEmpty(googleVideoUrl))
                 {
                     video.BlobName = $"videos/{video.VideoId}.mp4";

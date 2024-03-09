@@ -2,6 +2,7 @@
 using Jint.Native;
 using Jint.Native.Array;
 using Jint.Native.Object;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -59,6 +60,21 @@ namespace GoneViolet
                 }
             }
             return url;
+        }
+
+        public List<string> GetTags(string content)
+        {
+            List<string> result = new List<string>();
+            MatchCollection matches = Regex.Matches(content, @"<meta\b[^>]*\""og:video:tag\""[^>]*/?>", RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(250));
+            foreach (Match match in matches.Cast<Match>())
+            {
+                Match tag = Regex.Match(match.Value, @"content\s*=\s*\""([^\""]+)\""", RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(250));
+                if (tag != null && tag.Success)
+                {
+                    result.Add(HttpUtility.HtmlDecode(tag.Groups[1].Value));
+                }
+            }
+            return result;
         }
     }
 }

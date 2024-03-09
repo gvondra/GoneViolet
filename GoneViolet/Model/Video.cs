@@ -1,4 +1,6 @@
-﻿namespace GoneViolet.Model
+﻿using System.Collections.Generic;
+
+namespace GoneViolet.Model
 {
     public class Video
     {
@@ -7,5 +9,6 @@
         public string VideoId { get; set; }
         public string BlobName { get; set; }
         public bool IsStored { get; set; }
+        public List<string> Tags { get; set; }
     }
 }

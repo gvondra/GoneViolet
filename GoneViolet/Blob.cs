@@ -1,5 +1,4 @@
 ﻿using Azure;
-using Azure.Identity;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using System.IO;
@@ -16,7 +15,7 @@ namespace GoneViolet
         {
             BlobContainerClient containerClient = new BlobContainerClient(
                 new Uri(settings.VideoDataContainerUrl),
-                new DefaultAzureCredential());
+                AzureCredential.DefaultAzureCredential);
             BlobClient blobClient = containerClient.GetBlobClient(name);
             BlobOpenWriteOptions options = new BlobOpenWriteOptions();
             if (!string.IsNullOrEmpty(contentType))
@@ -44,7 +43,7 @@ namespace GoneViolet
             {
                 BlobContainerClient containerClient = new BlobContainerClient(
                     new Uri(settings.VideoDataContainerUrl),
-                    new DefaultAzureCredential());
+                    AzureCredential.DefaultAzureCredential);
                 BlobClient blobClient = containerClient.GetBlobClient(name);
                 result = await blobClient.OpenReadAsync();
             }

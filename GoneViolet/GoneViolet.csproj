@@ -37,7 +37,7 @@
 		<PackageReference Include="Autofac" Version="8.0.*" />
 		<PackageReference Include="Azure.Identity" Version="1.10.*" />
 		<PackageReference Include="Azure.Storage.Blobs" Version="12.19.*" />
-		<PackageReference Include="BrassLoon.RestClient" Version="4.1.0-prerelease.*" />
+		<PackageReference Include="BrassLoon.RestClient" Version="4.1.*" />
 		<PackageReference Include="Jint" Version="3.0.*" />
 		<PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.*" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="8.0.*" />
@@ -50,7 +50,7 @@
 		<PackageReference Include="Serilog.Extensions.Logging" Version="8.0.*" />
 		<PackageReference Include="Serilog.Sinks.Console" Version="5.0.*" />
 		<PackageReference Include="Serilog.Sinks.File" Version="5.0.*" />
-		<PackageReference Include="SonarAnalyzer.CSharp" Version="9.17.*">
+		<PackageReference Include="SonarAnalyzer.CSharp" Version="9.21.*">
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
