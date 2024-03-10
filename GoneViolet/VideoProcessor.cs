@@ -1,8 +1,9 @@
 ﻿using GoneViolet.Model;
 using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
+using Polly;
 using System.Globalization;
 using System.IO;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -10,6 +11,8 @@ namespace GoneViolet
 {
     public class VideoProcessor : IVideoProcessor
     {
+        private static readonly AsyncPolicy _retry = Policy.Handle<HttpRequestException>()
+            .WaitAndRetryAsync(new TimeSpan[] { TimeSpan.FromSeconds(5) });
         private readonly AppSettings _appSettings;
         private readonly IVideoDownloader _downloader;
         private readonly IYouTubeParser _youTubeParser;
@@ -68,9 +71,12 @@ namespace GoneViolet
                 {
                     string blobNameTemplate = !string.IsNullOrEmpty(_appSettings.BlobNameTemplate) ? _appSettings.BlobNameTemplate : @"videos/{0}.mp4";
                     video.BlobName = string.Format(CultureInfo.InvariantCulture, blobNameTemplate, video.VideoId);
-                    _logger.LogInformation($"Downloading video {video.Title} to blob {video.BlobName}");
-                    using Stream blobStream = await _blob.OpenWrite(_appSettings, video.BlobName, contentType: "video/mp4");
-                    await _downloader.Download(googleVideoUrl, blobStream);
+                    await _retry.ExecuteAsync(async () =>
+                    {
+                        _logger.LogInformation($"Downloading video {video.Title} to blob {video.BlobName}");
+                        using Stream blobStream = await _blob.OpenWrite(_appSettings, video.BlobName, contentType: "video/mp4");
+                        await _downloader.Download(googleVideoUrl, blobStream);
+                    });
                     video.IsStored = true;
                 }
                 else

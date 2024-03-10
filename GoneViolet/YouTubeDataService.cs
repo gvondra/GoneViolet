@@ -71,13 +71,13 @@ namespace GoneViolet
             IResponse<ListPlaylistResponse> response = await _service.Send<ListPlaylistResponse>(request);
             _restUtil.CheckSuccess(response);
             List<PlaylistItem> items = new List<PlaylistItem>(response.Value.items);
-            //while (!string.IsNullOrEmpty(response.Value.nextPageToken))
-            //{
-            //    request = CreateListPlaylistRequest(id, response.Value.nextPageToken);
-            //    response = await _service.Send<ListPlaylistResponse>(request);
-            //    _restUtil.CheckSuccess(response);
-            //    items.AddRange(response.Value.items);
-            //}
+            while (!string.IsNullOrEmpty(response.Value.nextPageToken))
+            {
+                request = CreateListPlaylistRequest(id, response.Value.nextPageToken);
+                response = await _service.Send<ListPlaylistResponse>(request);
+                _restUtil.CheckSuccess(response);
+                items.AddRange(response.Value.items);
+            }
             return items;
         }
 
