@@ -20,7 +20,7 @@ namespace GoneViolet
             if (result == 0)
                 result = string.Compare(x.VideoId ?? string.Empty, y.VideoId ?? string.Empty, StringComparison.OrdinalIgnoreCase);
             int ascedningMagnitude = _ascending ? 1 : -1;
-            return result & ascedningMagnitude;
+            return result * ascedningMagnitude;
         }
     }
 }
