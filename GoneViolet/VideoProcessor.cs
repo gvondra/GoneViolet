@@ -1,6 +1,7 @@
 ﻿using GoneViolet.Model;
 using Microsoft.Extensions.Logging;
 using Polly;
+using System;
 using System.Globalization;
 using System.IO;
 using System.Net.Http;
@@ -39,23 +40,30 @@ namespace GoneViolet
             if (!string.IsNullOrEmpty(content) && !string.IsNullOrEmpty(videoId))
             {
                 url = _youTubeParser.ParseVideo(content);
-                if (string.IsNullOrEmpty(url) && !string.IsNullOrEmpty(_appSettings.WorkingDirectory) && Directory.Exists(_appSettings.WorkingDirectory))
-                {
-                    // if we don't find the url, write the html to a file, so we can manually analyze it
-                    using (FileStream fileStream = new FileStream(Path.Combine(_appSettings.WorkingDirectory, videoId + ".html"), FileMode.Create, FileAccess.Write, FileShare.Read))
-                    {
-                        using (StreamWriter writer = new StreamWriter(fileStream, Encoding.UTF8))
-                        {
-                            writer.Write(content);
-                        }
-                    }
-                }
+                if (string.IsNullOrEmpty(url))
+                    LogContent(videoId, content);
             }
             return url;
         }
 
+        private void LogContent(string videoId, string content)
+        {
+            if (!string.IsNullOrEmpty(_appSettings.WorkingDirectory) && Directory.Exists(_appSettings.WorkingDirectory))
+            {
+                // if we don't find the url, write the html to a file, so we can manually analyze it
+                using (FileStream fileStream = new FileStream(Path.Combine(_appSettings.WorkingDirectory, videoId + ".html"), FileMode.Create, FileAccess.Write, FileShare.Read))
+                {
+                    using (StreamWriter writer = new StreamWriter(fileStream, Encoding.UTF8))
+                    {
+                        writer.Write(content);
+                    }
+                }
+            }
+        }
+
         public async Task SaveGoogleVideo(Video video)
         {
+            string content = null;
             try
             {
                 string googleVideoUrl = null;
@@ -63,7 +71,7 @@ namespace GoneViolet
                 {
                     string pageUrl = string.Format(CultureInfo.InvariantCulture, _appSettings.YouTubeUrlTemplate, video.VideoId);
                     _logger.LogInformation($"Downloading and parsing web page data {pageUrl}");
-                    string content = await _downloader.DownloadWebContent(pageUrl);
+                    content = await _downloader.DownloadWebContent(pageUrl);
                     googleVideoUrl = GetGoogleVideoUrl(content, video.VideoId);
                     video.Tags = _youTubeParser.GetTags(content);
                 }
@@ -88,6 +96,8 @@ namespace GoneViolet
             {
                 video.IsStored = false;
                 _logger.LogError(ex, ex.Message);
+                if (!string.IsNullOrEmpty(content))
+                    LogContent(video.VideoId, content);
             }
         }
     }
