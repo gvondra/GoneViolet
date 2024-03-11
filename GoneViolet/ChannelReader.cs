@@ -61,6 +61,10 @@ namespace GoneViolet
                 }
                 video.Title = item.snippet.title;
             }
+            if (channel.Videos != null && channel.Videos.Count > 0)
+            {
+                channel.Videos.Sort(new VideoPublishDateComparer(false));
+            }
             channel.YouTubDataTimestamp = DateTime.UtcNow;
         }
     }
