@@ -13,6 +13,7 @@ namespace GoneViolet.DependencyInjection
             builder.RegisterType<ChannelReader>();
             builder.RegisterType<RestUtil>().SingleInstance();
             builder.RegisterType<Service>().As<IService>();
+            builder.RegisterType<SignatureCipherDecoder>().As<ISignatureCipherDecoder>();
             builder.RegisterType<VideoDownloader>().As<IVideoDownloader>();
             builder.RegisterType<VideoProcessor>().As<IVideoProcessor>();
             builder.RegisterType<YouTubeDataService>().As<IYouTubeDataService>();

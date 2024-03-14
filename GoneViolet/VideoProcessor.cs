@@ -34,12 +34,12 @@ namespace GoneViolet
             _blob = blob;
         }
 
-        private string GetGoogleVideoUrl(string content, string videoId)
+        private async Task<string> GetGoogleVideoUrl(string content, string videoId)
         {
             string url = null;
             if (!string.IsNullOrEmpty(content) && !string.IsNullOrEmpty(videoId))
             {
-                url = _youTubeParser.ParseVideo(content);
+                url = await _youTubeParser.ParseVideo(content);
                 if (string.IsNullOrEmpty(url))
                     LogContent(videoId, content);
             }
@@ -72,7 +72,7 @@ namespace GoneViolet
                     string pageUrl = string.Format(CultureInfo.InvariantCulture, _appSettings.YouTubeUrlTemplate, video.VideoId);
                     _logger.LogInformation($"Downloading and parsing web page data {pageUrl}");
                     content = await _downloader.DownloadWebContent(pageUrl);
-                    googleVideoUrl = GetGoogleVideoUrl(content, video.VideoId);
+                    googleVideoUrl = await GetGoogleVideoUrl(content, video.VideoId);
                     video.Tags = _youTubeParser.GetTags(content);
                 }
                 if (!string.IsNullOrEmpty(googleVideoUrl))
