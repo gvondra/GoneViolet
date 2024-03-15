@@ -42,7 +42,11 @@ namespace GoneViolet
 
         private static JsonSerializerSettings SerializerSettings()
         {
-            JsonSerializerSettings settings = new JsonSerializerSettings() { ContractResolver = new DefaultContractResolver() };
+            JsonSerializerSettings settings = new JsonSerializerSettings()
+            {
+                ContractResolver = new DefaultContractResolver(),
+                NullValueHandling = NullValueHandling.Ignore
+            };
 #if DEBUG
             settings.Formatting = Formatting.Indented;
 #endif

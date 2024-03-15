@@ -9,6 +9,7 @@ namespace GoneViolet.Model
         public string VideoId { get; set; }
         public string BlobName { get; set; }
         public bool IsStored { get; set; }
+        public bool? Skip { get; set; }
         public List<string> Tags { get; set; }
     }
 }

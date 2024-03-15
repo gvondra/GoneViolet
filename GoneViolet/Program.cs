@@ -91,7 +91,8 @@ namespace GoneViolet
                     }
                 }
             }
-            ConcurrentQueue<Video> videos = new ConcurrentQueue<Video>(channel.Videos.Where(v => !string.IsNullOrEmpty(v.VideoId) && !v.IsStored));
+            ConcurrentQueue<Video> videos = new ConcurrentQueue<Video>(
+                channel.Videos.Where(v => !string.IsNullOrEmpty(v.VideoId) && !v.IsStored && !(v.Skip ?? false)));
             List<Task> tasks = new List<Task>();
             for (int i = 0; i < 2; i += 1)
             {

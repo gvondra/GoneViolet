@@ -86,6 +86,7 @@ namespace GoneViolet
                         await _downloader.Download(googleVideoUrl, blobStream);
                     });
                     video.IsStored = true;
+                    video.Skip = null;
                 }
                 else
                 {
