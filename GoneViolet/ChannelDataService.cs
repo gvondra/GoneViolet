@@ -1,6 +1,7 @@
 ﻿using GoneViolet.Model;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
@@ -62,6 +63,18 @@ namespace GoneViolet
                 using StreamWriter streamWriter = new StreamWriter(blobStream, SerializerEncoding());
                 using JsonTextWriter jsonTextWriter = new JsonTextWriter(streamWriter);
                 serializer.Serialize(jsonTextWriter, channel);
+            }
+        }
+
+        public async Task SavePlaylists(List<Playlist> playlists)
+        {
+            if (!string.IsNullOrEmpty(_appSettings.PlaylistsDataFile))
+            {
+                JsonSerializer serializer = JsonSerializer.Create(SerializerSettings());
+                using Stream blobStream = await _blob.OpenWrite(_appSettings, _appSettings.PlaylistsDataFile, contentType: "application/json");
+                using StreamWriter streamWriter = new StreamWriter(blobStream, SerializerEncoding());
+                using JsonTextWriter jsonTextWriter = new JsonTextWriter(streamWriter);
+                serializer.Serialize(jsonTextWriter, playlists);
             }
         }
     }

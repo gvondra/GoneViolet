@@ -64,6 +64,8 @@ namespace GoneViolet
                             // every 24 hours refresh the the list of videos from the YouTube playlist
                             await reader.GetPlaylistItems(channel);
                             await channelDataService.SaveChannel(channel);
+                            if (!string.IsNullOrEmpty(appSettings.PlaylistsDataFile))
+                                await SavePlayLists(reader, channelDataService, logger, channelId);
                         }
                         IVideoProcessor videoProcessor = scope.Resolve<IVideoProcessor>();
                         await DownloadVideos(appSettings, channel, videoProcessor, channelDataService);
@@ -74,6 +76,21 @@ namespace GoneViolet
                 {
                     logger.LogError(ex, ex.Message);
                 }
+            }
+        }
+
+        private static async Task SavePlayLists(
+            ChannelReader reader,
+            IChannelDataService channelDataService,
+            ILogger logger,
+            string channelId)
+        {
+            logger.LogInformation("Retrieving playlists");
+            List<Playlist> playlists = await reader.GetPlaylistsByChannelId(channelId);
+            if (playlists != null && playlists.Count > 0)
+            {
+                await channelDataService.SavePlaylists(playlists);
+                logger.LogInformation("Playlists saved");
             }
         }
 

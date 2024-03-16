@@ -68,13 +68,13 @@ namespace GoneViolet
         public async Task<List<PlaylistItem>> ListPlaylist(string id)
         {
             IRequest request = CreateListPlaylistRequest(id);
-            IResponse<ListPlaylistResponse> response = await _service.Send<ListPlaylistResponse>(request);
+            IResponse<ListPlaylistItemResponse> response = await _service.Send<ListPlaylistItemResponse>(request);
             _restUtil.CheckSuccess(response);
             List<PlaylistItem> items = new List<PlaylistItem>(response.Value.items);
             while (!string.IsNullOrEmpty(response.Value.nextPageToken))
             {
                 request = CreateListPlaylistRequest(id, response.Value.nextPageToken);
-                response = await _service.Send<ListPlaylistResponse>(request);
+                response = await _service.Send<ListPlaylistItemResponse>(request);
                 _restUtil.CheckSuccess(response);
                 items.AddRange(response.Value.items);
             }
@@ -89,6 +89,35 @@ namespace GoneViolet
                 .AddQueryParameter("part", "snippet")
                 .AddQueryParameter("maxResults", "50")
                 .AddQueryParameter("playlistId", id);
+            if (!string.IsNullOrEmpty(page))
+                request = request.AddQueryParameter("pageToken", page);
+            return request;
+        }
+
+        public async Task<List<Playlist>> GetPlaylistsByChannelId(string channelId)
+        {
+            IResponse<ListPlaylistResponse> response = await _service.Send<ListPlaylistResponse>(
+                CreateGetPlayListsByChannelIdRequets(channelId));
+            _restUtil.CheckSuccess(response);
+            List<Playlist> result = new List<Playlist>(response.Value.items);
+            while (!string.IsNullOrEmpty(response.Value.nextPageToken))
+            {
+                response = await _service.Send<ListPlaylistResponse>(
+                    CreateGetPlayListsByChannelIdRequets(channelId, response.Value.nextPageToken));
+                _restUtil.CheckSuccess(response);
+                result.AddRange(response.Value.items);
+            }
+            return result;
+        }
+
+        private IRequest CreateGetPlayListsByChannelIdRequets(string channelId, string page = null)
+        {
+            IRequest request = _service.CreateRequest(new Uri(_appSettings.YouTubeDataApiBaseAddress), HttpMethod.Get)
+                .AddPath("playlists")
+                .AddQueryParameter("key", _appSettings.GoogleApiKey)
+                .AddQueryParameter("part", "snippet")
+                .AddQueryParameter("maxResults", "50")
+                .AddQueryParameter("channelId", channelId);
             if (!string.IsNullOrEmpty(page))
                 request = request.AddQueryParameter("pageToken", page);
             return request;

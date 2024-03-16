@@ -2,11 +2,11 @@
 
 namespace GoneViolet.Model.YouTube
 {
-    public class ListPlaylistResponse
+    public class ListPlaylistItemResponse
     {
         public string kind { get; set; }
         public string nextPageToken { get; set; }
         public PageInfo pageInfo { get; set; }
-        public List<Playlist> items { get; set; }
+        public List<PlaylistItem> items { get; set; }
     }
 }

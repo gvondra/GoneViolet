@@ -1,4 +1,5 @@
 ﻿using GoneViolet.Model;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace GoneViolet
@@ -7,5 +8,6 @@ namespace GoneViolet
     {
         Task<Channel> GetChannel();
         Task SaveChannel(Channel channel);
+        Task SavePlaylists(List<Playlist> playlists);
     }
 }

@@ -8,6 +8,7 @@
         public string YouTubeUrlTemplate { get; set; }
         public string WorkingDirectory { get; set; }
         public string ChannelDataFile { get; set; }
+        public string PlaylistsDataFile { get; set; }
         public string VideoDataContainerUrl { get; set; }
         public string BlobNameTemplate { get; set; }
         public short? MaxThreadCount { get; set; }
