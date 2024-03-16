@@ -10,5 +10,6 @@
         public string ChannelDataFile { get; set; }
         public string VideoDataContainerUrl { get; set; }
         public string BlobNameTemplate { get; set; }
+        public short? MaxThreadCount { get; set; }
     }
 }

@@ -1,7 +1,6 @@
 ﻿using GoneViolet.Model;
 using Microsoft.Extensions.Logging;
 using Polly;
-using System;
 using System.Globalization;
 using System.IO;
 using System.Net.Http;
@@ -12,8 +11,12 @@ namespace GoneViolet
 {
     public class VideoProcessor : IVideoProcessor
     {
-        private static readonly AsyncPolicy _retry = Policy.Handle<HttpRequestException>()
-            .WaitAndRetryAsync(new TimeSpan[] { TimeSpan.FromSeconds(5) });
+        private static readonly AsyncPolicy _retry = Policy.WrapAsync(
+            Policy.Handle<HttpRequestException>()
+            .WaitAndRetryAsync(new TimeSpan[] { TimeSpan.FromSeconds(5) }),
+            Policy.Handle<IOException>()
+            .WaitAndRetryAsync(new TimeSpan[] { TimeSpan.FromSeconds(5) })
+            );
         private readonly AppSettings _appSettings;
         private readonly IVideoDownloader _downloader;
         private readonly IYouTubeParser _youTubeParser;

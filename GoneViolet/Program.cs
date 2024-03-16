@@ -32,11 +32,11 @@ namespace GoneViolet
                 playlistId
             };
             rootCommand.SetHandler(
-                BeginProcessing, channelOption, channelId, playlistId);
+                (opt, cId, lstID) => BeginProcessing(appSettings, opt, cId, lstID), channelOption, channelId, playlistId);
             await rootCommand.InvokeAsync(args);
         }
 
-        private static async Task BeginProcessing(string channelTitle, string channelId, string playlistId)
+        private static async Task BeginProcessing(AppSettings appSettings, string channelTitle, string channelId, string playlistId)
         {
             using (ILifetimeScope scope = DependencyInjection.ContainerFactory.BeginLifetimeScope())
             {
@@ -66,7 +66,7 @@ namespace GoneViolet
                             await channelDataService.SaveChannel(channel);
                         }
                         IVideoProcessor videoProcessor = scope.Resolve<IVideoProcessor>();
-                        await DownloadVideos(channel, videoProcessor, channelDataService);
+                        await DownloadVideos(appSettings, channel, videoProcessor, channelDataService);
                     }
                     logger.LogInformation($"Channel processing ended");
                 }
@@ -77,7 +77,7 @@ namespace GoneViolet
             }
         }
 
-        private static async Task DownloadVideos(Channel channel, IVideoProcessor videoProcessor, IChannelDataService channelDataService)
+        private static async Task DownloadVideos(AppSettings appSettings, Channel channel, IVideoProcessor videoProcessor, IChannelDataService channelDataService)
         {
             static async Task SaveVideos(ConcurrentQueue<Video> videos, Channel channel, IVideoProcessor videoProcessor, IChannelDataService channelDataService)
             {
@@ -94,9 +94,13 @@ namespace GoneViolet
             ConcurrentQueue<Video> videos = new ConcurrentQueue<Video>(
                 channel.Videos.Where(v => !string.IsNullOrEmpty(v.VideoId) && !v.IsStored && !(v.Skip ?? false)));
             List<Task> tasks = new List<Task>();
-            for (int i = 0; i < 2; i += 1)
+            short maxThreadCount = Math.Min(appSettings.MaxThreadCount ?? 4, (short)128);
+            if (maxThreadCount > 1)
             {
-                tasks.Add(Task.Run(() => SaveVideos(videos, channel, videoProcessor, channelDataService).Wait()));
+                for (int i = 0; i < maxThreadCount - 1; i += 1)
+                {
+                    tasks.Add(Task.Run(() => SaveVideos(videos, channel, videoProcessor, channelDataService).Wait()));
+                }
             }
             await SaveVideos(videos, channel, videoProcessor, channelDataService);
             await Task.WhenAll(tasks);
