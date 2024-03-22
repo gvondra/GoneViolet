@@ -1,10 +1,16 @@
-﻿using System.Collections.Generic;
+﻿using Newtonsoft.Json;
+using System.Collections.Generic;
 
 namespace GoneViolet.Model
 {
     public class Video
     {
-        public DateTime? PublishedTimestammp { get; set; }
+        private DateTime? _publishedTimestamp;
+
+        [Obsolete("Mispelled")]
+        public DateTime? PublishedTimestammp { get => _publishedTimestamp; set => _publishedTimestamp = !_publishedTimestamp.HasValue ? value : _publishedTimestamp; }
+        [JsonIgnore]
+        public DateTime? PublishedTimestamp { get => _publishedTimestamp; set => _publishedTimestamp = value; }
         public string Title { get; set; }
         public string VideoId { get; set; }
         public string BlobName { get; set; }

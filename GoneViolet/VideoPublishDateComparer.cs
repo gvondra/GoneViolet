@@ -15,8 +15,8 @@ namespace GoneViolet
         public int Compare(Video x, Video y)
         {
             int result = 0;
-            if (x.PublishedTimestammp.HasValue == y.PublishedTimestammp.HasValue && x.PublishedTimestammp.HasValue)
-                result = x.PublishedTimestammp.Value.CompareTo(y.PublishedTimestammp.Value);
+            if (x.PublishedTimestamp.HasValue == y.PublishedTimestamp.HasValue && x.PublishedTimestamp.HasValue)
+                result = x.PublishedTimestamp.Value.CompareTo(y.PublishedTimestamp.Value);
             if (result == 0)
                 result = string.Compare(x.VideoId ?? string.Empty, y.VideoId ?? string.Empty, StringComparison.OrdinalIgnoreCase);
             int ascedningMagnitude = _ascending ? 1 : -1;

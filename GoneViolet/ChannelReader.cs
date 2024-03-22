@@ -54,7 +54,7 @@ namespace GoneViolet
                 {
                     video = new Video()
                     {
-                        PublishedTimestammp = item.snippet.publishedAt,
+                        PublishedTimestamp = item.snippet.publishedAt,
                         VideoId = item.snippet.resourceId.videoId
                     };
                     channel.Videos.Add(video);
