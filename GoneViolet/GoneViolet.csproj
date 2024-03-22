@@ -51,7 +51,7 @@
 		<PackageReference Include="Serilog.Extensions.Logging" Version="8.0.*" />
 		<PackageReference Include="Serilog.Sinks.Console" Version="5.0.*" />
 		<PackageReference Include="Serilog.Sinks.File" Version="5.0.*" />
-		<PackageReference Include="SonarAnalyzer.CSharp" Version="9.21.*">
+		<PackageReference Include="SonarAnalyzer.CSharp" Version="9.22.*">
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
