@@ -73,8 +73,13 @@ namespace GoneViolet
                 JsonSerializer serializer = JsonSerializer.Create(SerializerSettings());
                 using Stream blobStream = await _blob.OpenWrite(_appSettings, _appSettings.PlaylistsDataFile, contentType: "application/json");
                 using StreamWriter streamWriter = new StreamWriter(blobStream, SerializerEncoding());
-                using JsonTextWriter jsonTextWriter = new JsonTextWriter(streamWriter);
-                serializer.Serialize(jsonTextWriter, playlists);
+                using (JsonTextWriter jsonTextWriter = new JsonTextWriter(streamWriter))
+                {
+                    serializer.Serialize(jsonTextWriter, playlists);
+                }
+                streamWriter.Close();
+                blobStream.Close();
+                await _blob.CreateSnapshot(_appSettings, _appSettings.PlaylistsDataFile);
             }
         }
     }
