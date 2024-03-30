@@ -25,52 +25,55 @@ namespace GoneViolet
             Argument<string> channelOption = new Argument<string>(name: "channel");
             Option<string> channelId = new Option<string>(name: "--channel-id");
             Option<string> playlistId = new Option<string>(name: "--playlist-id");
-            RootCommand rootCommand = new RootCommand
+
+            Command videoCommand = new Command("video", "Process channel video")
             {
                 channelOption,
                 channelId,
                 playlistId
             };
-            rootCommand.SetHandler(
-                (opt, cId, lstID) => BeginProcessing(appSettings, opt, cId, lstID), channelOption, channelId, playlistId);
+            videoCommand.SetHandler(
+                (opt, cId, lstID) => BeginVideoProcessing(appSettings, opt, cId, lstID), channelOption, channelId, playlistId);
+
+            Command audioCommand = new Command("audio", "Process channel mp3")
+            {
+                channelOption,
+                channelId,
+                playlistId
+            };
+            audioCommand.SetHandler(
+                (opt, cId, lstID) => BeginAudioProcessing(appSettings, opt, cId, lstID), channelOption, channelId, playlistId);
+
+            RootCommand rootCommand = new RootCommand();
+            rootCommand.AddCommand(videoCommand);
+            rootCommand.AddCommand(audioCommand);
             await rootCommand.InvokeAsync(args);
         }
 
-        private static async Task BeginProcessing(AppSettings appSettings, string channelTitle, string channelId, string playlistId)
+        private static async Task BeginVideoProcessing(AppSettings appSettings, string channelTitle, string channelId, string playlistId)
         {
             using (ILifetimeScope scope = DependencyInjection.ContainerFactory.BeginLifetimeScope())
             {
                 ILogger logger = scope.Resolve<Func<string, ILogger>>()("Program");
                 try
                 {
-                    logger.LogInformation($"Channel processing started");
-                    if (string.IsNullOrEmpty(channelTitle))
+                    Channel channel = await InitializeChannel(
+                        scope,
+                        logger,
+                        appSettings,
+                        channelTitle,
+                        channelId,
+                        playlistId);
+                    if (channel != null)
                     {
-                        logger.LogError($"Channel argument not set");
+                        logger.LogInformation($"Channel processing started");
+                        await DownloadVideos(
+                            appSettings,
+                            channel,
+                            scope.Resolve<IVideoProcessor>(),
+                            scope.Resolve<IChannelDataService>());
+                        logger.LogInformation($"Channel processing ended");
                     }
-                    else
-                    {
-                        logger.LogInformation($"Channel argument set \"{channelTitle}\"");
-                        ChannelReader reader = scope.Resolve<ChannelReader>();
-                        if (string.IsNullOrEmpty(playlistId))
-                            playlistId = await reader.SearchChannelPlaylistId(channelTitle, channelId);
-                        IChannelDataService channelDataService = scope.Resolve<IChannelDataService>();
-                        Channel channel = await channelDataService.GetChannel();
-                        channel.Title = channelTitle;
-                        channel.Id = channelId;
-                        channel.PlaylistId = playlistId;
-                        if ((channel.YouTubDataTimestamp ?? DateTime.MinValue).ToUniversalTime() < DateTime.UtcNow.AddHours(-24))
-                        {
-                            // every 24 hours refresh the the list of videos from the YouTube playlist
-                            await reader.GetPlaylistItems(channel);
-                            await channelDataService.SaveChannel(channel);
-                            if (!string.IsNullOrEmpty(appSettings.PlaylistsDataFile))
-                                await SavePlayLists(reader, channelDataService, logger, channelId);
-                        }
-                        IVideoProcessor videoProcessor = scope.Resolve<IVideoProcessor>();
-                        await DownloadVideos(appSettings, channel, videoProcessor, channelDataService);
-                    }
-                    logger.LogInformation($"Channel processing ended");
                 }
                 catch (Exception ex)
                 {
@@ -79,14 +82,84 @@ namespace GoneViolet
             }
         }
 
+        private static async Task BeginAudioProcessing(AppSettings appSettings, string channelTitle, string channelId, string playlistId)
+        {
+            using (ILifetimeScope scope = DependencyInjection.ContainerFactory.BeginLifetimeScope())
+            {
+                ILogger logger = scope.Resolve<Func<string, ILogger>>()("Program");
+                try
+                {
+                    Channel channel = await InitializeChannel(
+                        scope,
+                        logger,
+                        appSettings,
+                        channelTitle,
+                        channelId,
+                        playlistId);
+                    if (channel != null)
+                    {
+                        logger.LogInformation($"Channel processing started");
+                        await DownloadAudios(
+                            appSettings,
+                            channel,
+                            scope.Resolve<IAudioProcessor>(),
+                            scope.Resolve<IChannelDataService>());
+                        logger.LogInformation($"Channel processing ended");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, ex.Message);
+                }
+            }
+        }
+
+        private static async Task<Channel> InitializeChannel(
+            ILifetimeScope scope,
+            ILogger logger,
+            AppSettings appSettings,
+            string channelTitle,
+            string channelId,
+            string playlistId)
+        {
+            Channel channel = null;
+            logger.LogInformation($"Begin Channel Initialization");
+            if (string.IsNullOrEmpty(channelTitle))
+            {
+                logger.LogError($"Channel argument not set");
+            }
+            else
+            {
+                logger.LogInformation($"Channel argument set \"{channelTitle}\"");
+                IPlayListProcessor playListProcessor = scope.Resolve<IPlayListProcessor>();
+                if (string.IsNullOrEmpty(playlistId))
+                    playlistId = await playListProcessor.SearchChannelPlaylistId(channelTitle, channelId);
+                IChannelDataService channelDataService = scope.Resolve<IChannelDataService>();
+                channel = await channelDataService.GetChannel();
+                channel.Title = channelTitle;
+                channel.Id = channelId;
+                channel.PlaylistId = playlistId;
+                if ((channel.YouTubDataTimestamp ?? DateTime.MinValue).ToUniversalTime() < DateTime.UtcNow.AddHours(-24))
+                {
+                    // every 24 hours refresh the the list of videos from the YouTube playlist
+                    await playListProcessor.GetPlaylistItems(channel);
+                    await channelDataService.SaveChannel(channel);
+                    if (!string.IsNullOrEmpty(appSettings.PlaylistsDataFile))
+                        await SavePlayLists(playListProcessor, channelDataService, logger, channelId);
+                }
+            }
+            logger.LogInformation($"End Channel Initialization");
+            return channel;
+        }
+
         private static async Task SavePlayLists(
-            ChannelReader reader,
+            IPlayListProcessor playListProcessor,
             IChannelDataService channelDataService,
             ILogger logger,
             string channelId)
         {
             logger.LogInformation("Retrieving playlists");
-            List<Playlist> playlists = await reader.GetPlaylistsByChannelId(channelId);
+            List<Playlist> playlists = await playListProcessor.GetPlaylistsByChannelId(channelId);
             if (playlists != null && playlists.Count > 0)
             {
                 await channelDataService.SavePlaylists(playlists);
@@ -120,6 +193,35 @@ namespace GoneViolet
                 }
             }
             await SaveVideos(videos, channel, videoProcessor, channelDataService);
+            await Task.WhenAll(tasks);
+        }
+
+        private static async Task DownloadAudios(AppSettings appSettings, Channel channel, IAudioProcessor audioProcessor, IChannelDataService channelDataService)
+        {
+            static async Task SaveAudios(ConcurrentQueue<Video> videos, Channel channel, IAudioProcessor audioProcessor, IChannelDataService channelDataService)
+            {
+                Video video;
+                while (videos.TryDequeue(out video))
+                {
+                    await audioProcessor.SaveGoogleAudio(video);
+                    lock (channel)
+                    {
+                        channelDataService.SaveChannel(channel).Wait();
+                    }
+                }
+            }
+            ConcurrentQueue<Video> videos = new ConcurrentQueue<Video>(
+                channel.Videos.Where(v => !string.IsNullOrEmpty(v.VideoId) && !v.IsAudioStored && !(v.Skip ?? false)));
+            List<Task> tasks = new List<Task>();
+            short maxThreadCount = Math.Min(appSettings.MaxThreadCount ?? 4, (short)128);
+            if (maxThreadCount > 1)
+            {
+                for (int i = 0; i < maxThreadCount - 1; i += 1)
+                {
+                    tasks.Add(Task.Run(() => SaveAudios(videos, channel, audioProcessor, channelDataService).Wait()));
+                }
+            }
+            await SaveAudios(videos, channel, audioProcessor, channelDataService);
             await Task.WhenAll(tasks);
         }
 

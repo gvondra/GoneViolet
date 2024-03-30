@@ -14,7 +14,9 @@ namespace GoneViolet.Model
         public string Title { get; set; }
         public string VideoId { get; set; }
         public string BlobName { get; set; }
+        public string AudioBlobName { get; set; }
         public bool IsStored { get; set; }
+        public bool IsAudioStored { get; set; }
         public bool? Skip { get; set; }
         public List<string> Tags { get; set; }
     }
