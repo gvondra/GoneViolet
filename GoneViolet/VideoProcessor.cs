@@ -19,14 +19,14 @@ namespace GoneViolet
             );
         private readonly AppSettings _appSettings;
         private readonly IVideoDownloader _downloader;
-        private readonly IYouTubeParser _youTubeParser;
+        private readonly IYouTubeHtmlParser _youTubeParser;
         private readonly ILogger<VideoProcessor> _logger;
         private readonly IBlob _blob;
 
         public VideoProcessor(
             AppSettings appSettings,
             IVideoDownloader downloader,
-            IYouTubeParser youTubeParser,
+            IYouTubeHtmlParser youTubeParser,
             ILogger<VideoProcessor> logger,
             IBlob blob)
         {
