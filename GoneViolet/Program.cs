@@ -135,6 +135,7 @@ namespace GoneViolet
                 if (string.IsNullOrEmpty(playlistId))
                     playlistId = await playListProcessor.SearchChannelPlaylistId(channelTitle, channelId);
                 IChannelDataService channelDataService = scope.Resolve<IChannelDataService>();
+                await channelDataService.CreateSnapshot();
                 channel = await channelDataService.GetChannel();
                 channel.Title = channelTitle;
                 channel.Id = channelId;

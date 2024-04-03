@@ -9,5 +9,6 @@ namespace GoneViolet
         Task<Channel> GetChannel();
         Task SaveChannel(Channel channel);
         Task SavePlaylists(List<Playlist> playlists);
+        Task CreateSnapshot();
     }
 }

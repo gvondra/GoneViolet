@@ -82,5 +82,13 @@ namespace GoneViolet
                 await _blob.CreateSnapshot(_appSettings, _appSettings.PlaylistsDataFile);
             }
         }
+
+        public async Task CreateSnapshot()
+        {
+            if (!string.IsNullOrEmpty(_appSettings.ChannelDataFile) && await _blob.Exists(_appSettings, _appSettings.ChannelDataFile))
+            {
+                await _blob.CreateSnapshot(_appSettings, _appSettings.ChannelDataFile);
+            }
+        }
     }
 }

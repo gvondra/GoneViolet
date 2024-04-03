@@ -55,13 +55,23 @@ namespace GoneViolet
             return result;
         }
 
-        public async Task CreateSnapshot(AppSettings settings, string name)
+        public Task CreateSnapshot(AppSettings settings, string name)
         {
             BlobContainerClient containerClient = new BlobContainerClient(
                 new Uri(settings.VideoDataContainerUrl),
                 AzureCredential.DefaultAzureCredential);
             BlobClient blobClient = containerClient.GetBlobClient(name);
-            await blobClient.CreateSnapshotAsync();
+            return blobClient.CreateSnapshotAsync();
+        }
+
+        public async Task<bool> Exists(AppSettings settings, string name)
+        {
+            BlobContainerClient containerClient = new BlobContainerClient(
+                new Uri(settings.VideoDataContainerUrl),
+                AzureCredential.DefaultAzureCredential);
+            BlobClient blobClient = containerClient.GetBlobClient(name);
+            Response<bool> response = await blobClient.ExistsAsync();
+            return response.Value;
         }
     }
 }

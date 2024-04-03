@@ -9,5 +9,6 @@ namespace GoneViolet
         Task Upload(AppSettings settings, string name, Stream stream);
         Task<Stream> Download(AppSettings settings, string name);
         Task CreateSnapshot(AppSettings settings, string name);
+        Task<bool> Exists(AppSettings settings, string name);
     }
 }
