@@ -10,5 +10,6 @@ namespace GoneViolet
         Task<Stream> Download(AppSettings settings, string name);
         Task CreateSnapshot(AppSettings settings, string name);
         Task<bool> Exists(AppSettings settings, string name);
+        Task<long> GetContentLength(AppSettings settings, string name);
     }
 }

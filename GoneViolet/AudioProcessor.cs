@@ -11,6 +11,12 @@ namespace GoneViolet
 {
     public class AudioProcessor : IAudioProcessor
     {
+        private static readonly AsyncPolicy _circuitBreaker = Policy.Handle<Exception>()
+            .AdvancedCircuitBreakerAsync(
+            0.75,
+            TimeSpan.FromMinutes(10),
+            10,
+            TimeSpan.MaxValue);
         private static readonly AsyncPolicy _retry = Policy.WrapAsync(
             Policy.Handle<HttpRequestException>()
             .WaitAndRetryAsync(new TimeSpan[] { TimeSpan.FromSeconds(5) }),
@@ -42,33 +48,36 @@ namespace GoneViolet
             string content = null;
             try
             {
-                string googleVideoUrl = null;
-                if (!string.IsNullOrEmpty(video.VideoId))
+                await _circuitBreaker.ExecuteAsync(async () =>
                 {
-                    string pageUrl = string.Format(CultureInfo.InvariantCulture, _appSettings.YouTubeUrlTemplate, video.VideoId);
-                    _logger.LogInformation($"Downloading and parsing web page data {pageUrl}");
-                    content = await _downloader.DownloadWebContent(pageUrl);
-                    googleVideoUrl = await GetGoogleAudioUrl(content, video.VideoId);
-                    if (video.Tags == null || video.Tags.Count == 0)
-                        video.Tags = _youTubeParser.GetTags(content);
-                }
-                if (!string.IsNullOrEmpty(googleVideoUrl))
-                {
-                    string blobNameTemplate = !string.IsNullOrEmpty(_appSettings.AudioBlobNameTemplate) ? _appSettings.AudioBlobNameTemplate : @"audio/{0}.mp3";
-                    video.AudioBlobName = string.Format(CultureInfo.InvariantCulture, blobNameTemplate, video.VideoId);
-                    await _retry.ExecuteAsync(async () =>
+                    string googleVideoUrl = null;
+                    if (!string.IsNullOrEmpty(video.VideoId))
                     {
-                        _logger.LogInformation($"Downloading audio {video.Title} to blob {video.AudioBlobName}");
-                        using Stream blobStream = await _blob.OpenWrite(_appSettings, video.AudioBlobName, contentType: "audio/mgeg");
-                        await _downloader.Download(googleVideoUrl, blobStream);
-                    });
-                    video.IsAudioStored = true;
-                    video.Skip = null;
-                }
-                else
-                {
-                    _logger.LogWarning($"Audio url not found for \"{video.Title}\"");
-                }
+                        string pageUrl = string.Format(CultureInfo.InvariantCulture, _appSettings.YouTubeUrlTemplate, video.VideoId);
+                        _logger.LogInformation($"Downloading and parsing web page data {pageUrl}");
+                        content = await _downloader.DownloadWebContent(pageUrl);
+                        googleVideoUrl = await GetGoogleAudioUrl(content, video.VideoId);
+                        if (video.Tags == null || video.Tags.Count == 0)
+                            video.Tags = _youTubeParser.GetTags(content);
+                    }
+                    if (!string.IsNullOrEmpty(googleVideoUrl))
+                    {
+                        string blobNameTemplate = !string.IsNullOrEmpty(_appSettings.AudioBlobNameTemplate) ? _appSettings.AudioBlobNameTemplate : @"audio/{0}.mp3";
+                        video.AudioBlobName = string.Format(CultureInfo.InvariantCulture, blobNameTemplate, video.VideoId);
+                        await _retry.ExecuteAsync(async () =>
+                        {
+                            _logger.LogInformation($"Downloading audio {video.Title} to blob {video.AudioBlobName}");
+                            using Stream blobStream = await _blob.OpenWrite(_appSettings, video.AudioBlobName, contentType: "audio/mgeg");
+                            await _downloader.Download(googleVideoUrl, blobStream);
+                        });
+                        video.IsAudioStored = true;
+                        video.Skip = null;
+                    }
+                    else
+                    {
+                        _logger.LogWarning($"Audio url not found for \"{video.Title}\"");
+                    }
+                });
             }
             catch (Exception ex)
             {

@@ -73,5 +73,15 @@ namespace GoneViolet
             Response<bool> response = await blobClient.ExistsAsync();
             return response.Value;
         }
+
+        public async Task<long> GetContentLength(AppSettings settings, string name)
+        {
+            BlobContainerClient containerClient = new BlobContainerClient(
+                new Uri(settings.VideoDataContainerUrl),
+                AzureCredential.DefaultAzureCredential);
+            BlobClient blobClient = containerClient.GetBlobClient(name);
+            Response<BlobProperties> response = await blobClient.GetPropertiesAsync();
+            return response.Value.ContentLength;
+        }
     }
 }

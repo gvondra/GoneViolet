@@ -5,6 +5,6 @@ namespace GoneViolet
 {
     public interface IVideoProcessor
     {
-        Task SaveGoogleVideo(Video video);
+        Task SaveGoogleVideo(Video video, bool skipNonEmptyExistingBlobs);
     }
 }
