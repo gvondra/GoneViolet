@@ -83,5 +83,14 @@ namespace GoneViolet
             Response<BlobProperties> response = await blobClient.GetPropertiesAsync();
             return response.Value.ContentLength;
         }
+
+        public async Task Delete(AppSettings settings, string name)
+        {
+            BlobContainerClient containerClient = new BlobContainerClient(
+                new Uri(settings.VideoDataContainerUrl),
+                AzureCredential.DefaultAzureCredential);
+            BlobClient blobClient = containerClient.GetBlobClient(name);
+            await blobClient.DeleteIfExistsAsync(DeleteSnapshotsOption.IncludeSnapshots);
+        }
     }
 }
