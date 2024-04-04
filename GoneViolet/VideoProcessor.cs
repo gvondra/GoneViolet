@@ -80,6 +80,11 @@ namespace GoneViolet
                 }
                 else
                 {
+                    if (video.Tags == null || video.Tags.Count == 0)
+                    {
+                        video.Tags = _youTubeParser.GetTags(
+                            await GetContent(video));
+                    }
                     _logger.LogInformation($"Skipping existing blob {video.BlobName}");
                 }
             }
@@ -100,9 +105,7 @@ namespace GoneViolet
                     string googleVideoUrl = null;
                     if (!string.IsNullOrEmpty(video.VideoId))
                     {
-                        string pageUrl = string.Format(CultureInfo.InvariantCulture, _appSettings.YouTubeUrlTemplate, video.VideoId);
-                        _logger.LogInformation($"Downloading and parsing web page data {pageUrl}");
-                        content = await _downloader.DownloadWebContent(pageUrl);
+                        content = await GetContent(video);
                         googleVideoUrl = await GetGoogleVideoUrl(content, video.VideoId);
                         video.Tags = _youTubeParser.GetTags(content);
                     }
@@ -131,6 +134,13 @@ namespace GoneViolet
                     LogContent(video.VideoId, content);
                 await DeleteBlob(video);
             }
+        }
+
+        private Task<string> GetContent(Video video)
+        {
+            string pageUrl = string.Format(CultureInfo.InvariantCulture, _appSettings.YouTubeUrlTemplate, video.VideoId);
+            _logger.LogInformation($"Downloading and parsing web page data {pageUrl}");
+            return _downloader.DownloadWebContent(pageUrl);
         }
 
         private void UpdateBlobName(Video video)
