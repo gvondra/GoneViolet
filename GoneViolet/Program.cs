@@ -180,12 +180,18 @@ namespace GoneViolet
             static async Task SaveVideos(ConcurrentQueue<Video> videos, Channel channel, IVideoProcessor videoProcessor, IChannelDataService channelDataService, bool skipNonEmptyExistingBlobs)
             {
                 Video video;
+                DateTime lastSnapshot = DateTime.UtcNow;
                 while (videos.TryDequeue(out video))
                 {
                     await videoProcessor.SaveGoogleVideo(video, skipNonEmptyExistingBlobs);
                     lock (channel)
                     {
                         channelDataService.SaveChannel(channel).Wait();
+                        if (lastSnapshot.AddMinutes(6) < DateTime.UtcNow)
+                        {
+                            channelDataService.CreateSnapshot().Wait();
+                            lastSnapshot = DateTime.UtcNow;
+                        }
                     }
                 }
             }

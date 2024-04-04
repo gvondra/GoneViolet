@@ -78,6 +78,10 @@ namespace GoneViolet
                 {
                     await SaveGoogleVideo(video);
                 }
+                else
+                {
+                    _logger.LogInformation($"Skipping existing blob {video.BlobName}");
+                }
             }
             catch (Exception ex)
             {
