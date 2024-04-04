@@ -28,9 +28,9 @@ namespace GoneViolet
             return blobClient.OpenWriteAsync(true, options);
         }
 
-        public async Task Upload(AppSettings settings, string name, Stream stream)
+        public async Task Upload(AppSettings settings, string name, Stream stream, string contentType = null)
         {
-            using (Stream blobStream = await OpenWrite(settings, name))
+            using (Stream blobStream = await OpenWrite(settings, name, contentType))
             {
                 await stream.CopyToAsync(blobStream);
             }

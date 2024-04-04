@@ -49,22 +49,37 @@ namespace GoneViolet
             {
                 url = await _youTubeParser.ParseVideo(content);
                 if (string.IsNullOrEmpty(url))
-                    LogContent(videoId, content);
+                    await LogContent(videoId, content);
             }
             return url;
         }
 
-        private void LogContent(string videoId, string content)
+        private async Task LogContent(string videoId, string content)
         {
-            if (!string.IsNullOrEmpty(_appSettings.WorkingDirectory) && Directory.Exists(_appSettings.WorkingDirectory))
+            if (!string.IsNullOrEmpty(content))
             {
-                // if we don't find the url, write the html to a file, so we can manually analyze it
-                using (FileStream fileStream = new FileStream(Path.Combine(_appSettings.WorkingDirectory, videoId + ".html"), FileMode.Create, FileAccess.Write, FileShare.Read))
+                if (!string.IsNullOrEmpty(_appSettings.WorkingDirectory) && Directory.Exists(_appSettings.WorkingDirectory))
                 {
-                    using (StreamWriter writer = new StreamWriter(fileStream, Encoding.UTF8))
+                    // if we don't find the url, write the html to a file, so we can manually analyze it
+                    using (FileStream fileStream = new FileStream(Path.Combine(_appSettings.WorkingDirectory, videoId + ".html"), FileMode.Create, FileAccess.Write, FileShare.Read))
                     {
-                        writer.Write(content);
+                        using (StreamWriter writer = new StreamWriter(fileStream, Encoding.UTF8))
+                        {
+                            writer.Write(content);
+                        }
                     }
+                }
+                if (!string.IsNullOrEmpty(_appSettings.HtmlContentBlobNameTemplate))
+                {
+                    using MemoryStream stream = new MemoryStream();
+                    using (StreamWriter writer = new StreamWriter(stream, Encoding.UTF8, leaveOpen: true))
+                    {
+                        await writer.WriteAsync(content);
+                        await writer.FlushAsync();
+                        writer.Close();
+                    }
+                    stream.Position = 0;
+                    await _blob.Upload(_appSettings, string.Format(CultureInfo.InvariantCulture, _appSettings.HtmlContentBlobNameTemplate, videoId), stream, "text/plain");
                 }
             }
         }
@@ -131,7 +146,7 @@ namespace GoneViolet
                 video.IsStored = false;
                 _logger.LogError(ex, ex.Message);
                 if (!string.IsNullOrEmpty(content))
-                    LogContent(video.VideoId, content);
+                    await LogContent(video.VideoId, content);
                 await DeleteBlob(video);
             }
         }

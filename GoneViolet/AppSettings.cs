@@ -12,6 +12,7 @@
         public string VideoDataContainerUrl { get; set; }
         public string BlobNameTemplate { get; set; }
         public string AudioBlobNameTemplate { get; set; }
+        public string HtmlContentBlobNameTemplate { get; set; }
         public short? MaxThreadCount { get; set; }
     }
 }
