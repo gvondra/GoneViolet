@@ -97,6 +97,7 @@ namespace GoneViolet
                 {
                     if (video.Tags == null || video.Tags.Count == 0)
                     {
+                        await Task.Delay(TimeSpan.FromSeconds(20));
                         video.Tags = _youTubeParser.GetTags(
                             await GetContent(video));
                     }
