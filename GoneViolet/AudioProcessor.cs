@@ -85,6 +85,7 @@ namespace GoneViolet
                 _logger.LogError(ex, ex.Message);
                 if (!string.IsNullOrEmpty(content))
                     LogContent(video.VideoId, content);
+                await DeleteBlob(video);
             }
         }
 
@@ -112,6 +113,21 @@ namespace GoneViolet
                         writer.Write(content);
                     }
                 }
+            }
+        }
+
+        private async Task DeleteBlob(Video video)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(video.BlobName) && await _blob.Exists(_appSettings, video.BlobName))
+                {
+                    await _blob.Delete(_appSettings, video.BlobName);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, ex.Message);
             }
         }
     }
