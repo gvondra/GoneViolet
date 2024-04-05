@@ -146,9 +146,20 @@ namespace GoneViolet
             {
                 video.IsStored = false;
                 _logger.LogError(ex, ex.Message);
+                await LogScript(video.VideoId, ex);
                 if (!string.IsNullOrEmpty(content))
                     await LogContent(video.VideoId, content);
                 await DeleteBlob(video);
+            }
+        }
+
+        private async Task LogScript(string videoId, Exception ex)
+        {
+            string script = ex.Data.Contains("script") ? ex.Data["script"]?.ToString() : null;
+
+            if (!string.IsNullOrEmpty(script))
+            {
+                await LogContent($"script-{videoId}", script);
             }
         }
 

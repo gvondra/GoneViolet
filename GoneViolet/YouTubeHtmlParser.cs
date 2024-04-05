@@ -58,11 +58,22 @@ namespace GoneViolet
                 {
                     //_logger.LogDebug(decodedScript);
                     // load the javascript
-                    Engine engine = new Engine()
+                    JsValue formats;
+                    Engine engine;
+                    try
+                    {
+                        engine = new Engine()
                         .Execute(decodedScript)
                         .Execute("var formats = ytInitialPlayerResponse.streamingData.formats;")
                         .Execute("var adaptiveFormats = ytInitialPlayerResponse.streamingData.adaptiveFormats;");
-                    JsValue formats = engine.GetValue("formats");
+                        formats = engine.GetValue("formats");
+                    }
+                    catch (Exception ex)
+                    {
+                        ApplicationException applicationException = new ApplicationException("Error processing JS", ex);
+                        applicationException.Data["script"] = decodedScript;
+                        throw applicationException;
+                    }
 
                     url = await SearchFormats(formats, content, targetQuality, exactQualityMatch, mimeType);
                     if (string.IsNullOrEmpty(url))
