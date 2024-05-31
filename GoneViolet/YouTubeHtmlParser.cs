@@ -28,6 +28,21 @@ namespace GoneViolet
         public Task<string> ParseAudio(string content)
             => InnerParseVideo(content, "tiny", true, "^audio/mp4");
 
+        public List<string> GetTags(string content)
+        {
+            List<string> result = new List<string>();
+            MatchCollection matches = Regex.Matches(content, @"<meta\b[^>]*\""og:video:tag\""[^>]*/?>", RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(250));
+            foreach (Match match in matches.Cast<Match>())
+            {
+                Match tag = Regex.Match(match.Value, @"content\s*=\s*\""([^\""]+)\""", RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(250));
+                if (tag != null && tag.Success)
+                {
+                    result.Add(HttpUtility.HtmlDecode(tag.Groups[1].Value));
+                }
+            }
+            return result;
+        }
+
         private async Task<string> InnerParseVideo(
             string content,
             string targetQuality,
@@ -147,21 +162,6 @@ namespace GoneViolet
                 }
             }
             return url;
-        }
-
-        public List<string> GetTags(string content)
-        {
-            List<string> result = new List<string>();
-            MatchCollection matches = Regex.Matches(content, @"<meta\b[^>]*\""og:video:tag\""[^>]*/?>", RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(250));
-            foreach (Match match in matches.Cast<Match>())
-            {
-                Match tag = Regex.Match(match.Value, @"content\s*=\s*\""([^\""]+)\""", RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(250));
-                if (tag != null && tag.Success)
-                {
-                    result.Add(HttpUtility.HtmlDecode(tag.Groups[1].Value));
-                }
-            }
-            return result;
         }
     }
 }

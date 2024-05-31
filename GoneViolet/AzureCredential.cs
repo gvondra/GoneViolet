@@ -6,8 +6,6 @@ namespace GoneViolet
     {
         public static DefaultAzureCredential DefaultAzureCredential { get; } = CreateDefaultAzureCredential();
 
-        private static DefaultAzureCredential CreateDefaultAzureCredential() => new DefaultAzureCredential(GetDefaultAzureCredentialOptions());
-
         public static DefaultAzureCredentialOptions GetDefaultAzureCredentialOptions()
         {
             return new DefaultAzureCredentialOptions()
@@ -21,5 +19,7 @@ namespace GoneViolet
                 ExcludeVisualStudioCredential = false
             };
         }
+
+        private static DefaultAzureCredential CreateDefaultAzureCredential() => new DefaultAzureCredential(GetDefaultAzureCredentialOptions());
     }
 }

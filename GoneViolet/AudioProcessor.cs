@@ -21,8 +21,7 @@ namespace GoneViolet
             Policy.Handle<HttpRequestException>()
             .WaitAndRetryAsync(new TimeSpan[] { TimeSpan.FromSeconds(5) }),
             Policy.Handle<IOException>()
-            .WaitAndRetryAsync(new TimeSpan[] { TimeSpan.FromSeconds(5) })
-            );
+            .WaitAndRetryAsync(new TimeSpan[] { TimeSpan.FromSeconds(5) }));
         private readonly AppSettings _appSettings;
         private readonly IVideoDownloader _downloader;
         private readonly IYouTubeHtmlParser _youTubeParser;

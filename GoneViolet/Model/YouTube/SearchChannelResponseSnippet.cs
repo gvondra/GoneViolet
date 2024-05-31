@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace GoneViolet.Model.YouTube
+﻿namespace GoneViolet.Model.YouTube
 {
     public class SearchChannelResponseSnippet
     {

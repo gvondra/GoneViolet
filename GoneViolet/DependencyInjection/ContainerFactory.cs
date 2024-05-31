@@ -28,6 +28,8 @@ namespace GoneViolet.DependencyInjection
             _container = builder.Build();
         }
 
+        public static ILifetimeScope BeginLifetimeScope() => _container.BeginLifetimeScope();
+
         private static void RegisterLogging(ContainerBuilder builder, AppSettings settings)
         {
             LoggerConfiguration loggerConfiguration = new LoggerConfiguration()
@@ -44,21 +46,19 @@ namespace GoneViolet.DependencyInjection
                 b.AddSerilog(loggerConfiguration.CreateLogger());
             })).SingleInstance();
             builder.RegisterGeneric((context, types) =>
-            {
-                ILoggerFactory loggerFactory = context.Resolve<ILoggerFactory>();
-                Type factoryType = typeof(LoggerFactoryExtensions);
-                MethodInfo methodInfo = factoryType.GetMethod("CreateLogger", BindingFlags.Public | BindingFlags.Static, new Type[] { typeof(ILoggerFactory) });
-                methodInfo = methodInfo.MakeGenericMethod(types);
-                return methodInfo.Invoke(null, new object[] { loggerFactory });
-
-            }).As(typeof(ILogger<>));
+                {
+                    ILoggerFactory loggerFactory = context.Resolve<ILoggerFactory>();
+                    Type factoryType = typeof(LoggerFactoryExtensions);
+                    MethodInfo methodInfo = factoryType.GetMethod("CreateLogger", BindingFlags.Public | BindingFlags.Static, new Type[] { typeof(ILoggerFactory) });
+                    methodInfo = methodInfo.MakeGenericMethod(types);
+                    return methodInfo.Invoke(null, new object[] { loggerFactory });
+                })
+                .As(typeof(ILogger<>));
             builder.Register<string, Microsoft.Extensions.Logging.ILogger>((context, categoryName) =>
             {
                 ILoggerFactory loggerFactory = context.Resolve<ILoggerFactory>();
                 return loggerFactory.CreateLogger(categoryName);
             });
         }
-
-        public static ILifetimeScope BeginLifetimeScope() => _container.BeginLifetimeScope();
     }
 }

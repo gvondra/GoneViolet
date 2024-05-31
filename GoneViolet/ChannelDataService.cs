@@ -39,21 +39,6 @@ namespace GoneViolet
             return channel ?? new Channel();
         }
 
-        private static UTF8Encoding SerializerEncoding() => new UTF8Encoding(false);
-
-        private static JsonSerializerSettings SerializerSettings()
-        {
-            JsonSerializerSettings settings = new JsonSerializerSettings()
-            {
-                ContractResolver = new DefaultContractResolver(),
-                NullValueHandling = NullValueHandling.Ignore
-            };
-#if DEBUG
-            settings.Formatting = Formatting.Indented;
-#endif
-            return settings;
-        }
-
         public async Task SaveChannel(Channel channel)
         {
             if (!string.IsNullOrEmpty(_appSettings.ChannelDataFile))
@@ -89,6 +74,21 @@ namespace GoneViolet
             {
                 await _blob.CreateSnapshot(_appSettings, _appSettings.ChannelDataFile);
             }
+        }
+
+        private static UTF8Encoding SerializerEncoding() => new UTF8Encoding(false);
+
+        private static JsonSerializerSettings SerializerSettings()
+        {
+            JsonSerializerSettings settings = new JsonSerializerSettings()
+            {
+                ContractResolver = new DefaultContractResolver(),
+                NullValueHandling = NullValueHandling.Ignore
+            };
+#if DEBUG
+            settings.Formatting = Formatting.Indented;
+#endif
+            return settings;
         }
     }
 }

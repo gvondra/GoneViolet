@@ -40,20 +40,6 @@ namespace GoneViolet
             return item;
         }
 
-        private IRequest CreateSearchChannelRequest(string value, string page = null)
-        {
-            IRequest request = _service.CreateRequest(new Uri(_appSettings.YouTubeDataApiBaseAddress), HttpMethod.Get)
-                .AddPath("search")
-                .AddQueryParameter("key", _appSettings.GoogleApiKey)
-                .AddQueryParameter("part", "snippet")
-                .AddQueryParameter("type", "channel")
-                .AddQueryParameter("maxResults", "10")
-                .AddQueryParameter("q", value);
-            if (!string.IsNullOrEmpty(page))
-                request = request.AddQueryParameter("pageToken", page);
-            return request;
-        }
-
         public Task<ListChannelResponse> ListChannel(string id)
         {
             IRequest request = _service.CreateRequest(new Uri(_appSettings.YouTubeDataApiBaseAddress), HttpMethod.Get)
@@ -81,19 +67,6 @@ namespace GoneViolet
             return items;
         }
 
-        private IRequest CreateListPlaylistRequest(string id, string page = null)
-        {
-            IRequest request = _service.CreateRequest(new Uri(_appSettings.YouTubeDataApiBaseAddress), HttpMethod.Get)
-                .AddPath("playlistItems")
-                .AddQueryParameter("key", _appSettings.GoogleApiKey)
-                .AddQueryParameter("part", "snippet")
-                .AddQueryParameter("maxResults", "50")
-                .AddQueryParameter("playlistId", id);
-            if (!string.IsNullOrEmpty(page))
-                request = request.AddQueryParameter("pageToken", page);
-            return request;
-        }
-
         public async Task<List<Playlist>> GetPlaylistsByChannelId(string channelId)
         {
             IResponse<ListPlaylistResponse> response = await _service.Send<ListPlaylistResponse>(
@@ -108,6 +81,33 @@ namespace GoneViolet
                 result.AddRange(response.Value.items);
             }
             return result;
+        }
+
+        private IRequest CreateSearchChannelRequest(string value, string page = null)
+        {
+            IRequest request = _service.CreateRequest(new Uri(_appSettings.YouTubeDataApiBaseAddress), HttpMethod.Get)
+                .AddPath("search")
+                .AddQueryParameter("key", _appSettings.GoogleApiKey)
+                .AddQueryParameter("part", "snippet")
+                .AddQueryParameter("type", "channel")
+                .AddQueryParameter("maxResults", "10")
+                .AddQueryParameter("q", value);
+            if (!string.IsNullOrEmpty(page))
+                request = request.AddQueryParameter("pageToken", page);
+            return request;
+        }
+
+        private IRequest CreateListPlaylistRequest(string id, string page = null)
+        {
+            IRequest request = _service.CreateRequest(new Uri(_appSettings.YouTubeDataApiBaseAddress), HttpMethod.Get)
+                .AddPath("playlistItems")
+                .AddQueryParameter("key", _appSettings.GoogleApiKey)
+                .AddQueryParameter("part", "snippet")
+                .AddQueryParameter("maxResults", "50")
+                .AddQueryParameter("playlistId", id);
+            if (!string.IsNullOrEmpty(page))
+                request = request.AddQueryParameter("pageToken", page);
+            return request;
         }
 
         private IRequest CreateGetPlayListsByChannelIdRequets(string channelId, string page = null)
