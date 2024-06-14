@@ -42,30 +42,45 @@ namespace GoneViolet
             _blob = blob;
         }
 
-        public async Task SaveGoogleVideo(Video video, bool skipNonEmptyExistingBlobs)
+        public async Task SaveGoogleVideo(Video video)
         {
+            string content = null;
             try
             {
-                UpdateBlobName(video);
-                if (!skipNonEmptyExistingBlobs || !await NonEmptyBlobExists(video))
+                await _circuitBreaker.ExecuteAsync(async () =>
                 {
-                    await SaveGoogleVideo(video);
-                }
-                else
-                {
-                    if (video.Tags == null || video.Tags.Count == 0)
+                    string googleVideoUrl = null;
+                    if (await ShouldDownload(video))
                     {
-                        await Task.Delay(TimeSpan.FromSeconds(20));
-                        video.Tags = _youTubeParser.GetTags(
-                            await GetContent(video));
+                        content = await GetContent(video);
+                        googleVideoUrl = await GetGoogleVideoUrl(content, video.VideoId);
+                        video.Tags = _youTubeParser.GetTags(content);
                     }
-                    _logger.LogInformation($"Skipping existing blob {video.BlobName}");
-                }
+                    if (!string.IsNullOrEmpty(googleVideoUrl))
+                    {
+                        await _retry.ExecuteAsync(async () =>
+                        {
+                            _logger.LogInformation($"Downloading video {video.Title} to blob {video.BlobName}");
+                            using Stream blobStream = await _blob.OpenWrite(_appSettings, video.BlobName, contentType: "video/mp4");
+                            await _downloader.Download(googleVideoUrl, blobStream);
+                        });
+                        video.IsStored = true;
+                        video.Skip = null;
+                    }
+                    else
+                    {
+                        _logger.LogWarning($"Video url not found for \"{video.Title}\"");
+                    }
+                });
             }
             catch (Exception ex)
             {
                 video.IsStored = false;
                 _logger.LogError(ex, ex.Message);
+                await LogScript(video.VideoId, ex);
+                if (!string.IsNullOrEmpty(content))
+                    await LogContent(video.VideoId, content);
+                await DeleteBlob(video);
             }
         }
 
@@ -111,48 +126,6 @@ namespace GoneViolet
             }
         }
 
-        private async Task SaveGoogleVideo(Video video)
-        {
-            string content = null;
-            try
-            {
-                await _circuitBreaker.ExecuteAsync(async () =>
-                {
-                    string googleVideoUrl = null;
-                    if (!string.IsNullOrEmpty(video.VideoId))
-                    {
-                        content = await GetContent(video);
-                        googleVideoUrl = await GetGoogleVideoUrl(content, video.VideoId);
-                        video.Tags = _youTubeParser.GetTags(content);
-                    }
-                    if (!string.IsNullOrEmpty(googleVideoUrl))
-                    {
-                        await _retry.ExecuteAsync(async () =>
-                        {
-                            _logger.LogInformation($"Downloading video {video.Title} to blob {video.BlobName}");
-                            using Stream blobStream = await _blob.OpenWrite(_appSettings, video.BlobName, contentType: "video/mp4");
-                            await _downloader.Download(googleVideoUrl, blobStream);
-                        });
-                        video.IsStored = true;
-                        video.Skip = null;
-                    }
-                    else
-                    {
-                        _logger.LogWarning($"Video url not found for \"{video.Title}\"");
-                    }
-                });
-            }
-            catch (Exception ex)
-            {
-                video.IsStored = false;
-                _logger.LogError(ex, ex.Message);
-                await LogScript(video.VideoId, ex);
-                if (!string.IsNullOrEmpty(content))
-                    await LogContent(video.VideoId, content);
-                await DeleteBlob(video);
-            }
-        }
-
         private async Task LogScript(string videoId, Exception ex)
         {
             string script = ex.Data.Contains("script") ? ex.Data["script"]?.ToString() : null;
@@ -170,21 +143,8 @@ namespace GoneViolet
             return _downloader.DownloadWebContent(pageUrl);
         }
 
-        private void UpdateBlobName(Video video)
-        {
-            if (string.IsNullOrEmpty(video.BlobName))
-            {
-                string blobNameTemplate = !string.IsNullOrEmpty(_appSettings.BlobNameTemplate) ? _appSettings.BlobNameTemplate : @"videos/{0}.mp4";
-                video.BlobName = string.Format(CultureInfo.InvariantCulture, blobNameTemplate, video.VideoId);
-            }
-        }
-
-        private async Task<bool> NonEmptyBlobExists(Video video)
-        {
-            return !string.IsNullOrEmpty(video.BlobName)
-                && await _blob.Exists(_appSettings, video.BlobName)
-                && await _blob.GetContentLength(_appSettings, video.BlobName) > 0;
-        }
+        private async Task<bool> ShouldDownload(Video video)
+            => !string.IsNullOrEmpty(video.VideoId) && (!video.IsStored || !await _blob.Exists(_appSettings, video.BlobName) || await _blob.GetContentLength(_appSettings, video.BlobName) == 0);
 
         private async Task DeleteBlob(Video video)
         {

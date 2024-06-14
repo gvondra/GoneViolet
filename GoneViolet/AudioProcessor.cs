@@ -50,7 +50,7 @@ namespace GoneViolet
                 await _circuitBreaker.ExecuteAsync(async () =>
                 {
                     string googleVideoUrl = null;
-                    if (!string.IsNullOrEmpty(video.VideoId))
+                    if (await ShouldDownload(video))
                     {
                         string pageUrl = string.Format(CultureInfo.InvariantCulture, _appSettings.YouTubeUrlTemplate, video.VideoId);
                         _logger.LogInformation($"Downloading and parsing web page data {pageUrl}");
@@ -115,13 +115,16 @@ namespace GoneViolet
             }
         }
 
+        private async Task<bool> ShouldDownload(Video video)
+            => !string.IsNullOrEmpty(video.VideoId) && (!video.IsAudioStored || !await _blob.Exists(_appSettings, video.AudioBlobName) || await _blob.GetContentLength(_appSettings, video.AudioBlobName) == 0);
+
         private async Task DeleteBlob(Video video)
         {
             try
             {
-                if (!string.IsNullOrEmpty(video.BlobName) && await _blob.Exists(_appSettings, video.BlobName))
+                if (!string.IsNullOrEmpty(video.AudioBlobName) && await _blob.Exists(_appSettings, video.AudioBlobName))
                 {
-                    await _blob.Delete(_appSettings, video.BlobName);
+                    await _blob.Delete(_appSettings, video.AudioBlobName);
                 }
             }
             catch (Exception ex)

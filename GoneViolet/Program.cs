@@ -71,14 +71,7 @@ namespace GoneViolet
                             appSettings,
                             channel,
                             scope.Resolve<IVideoProcessor>(),
-                            scope.Resolve<IChannelDataService>(),
-                            true);
-                        await DownloadVideos(
-                            appSettings,
-                            channel,
-                            scope.Resolve<IVideoProcessor>(),
-                            scope.Resolve<IChannelDataService>(),
-                            false);
+                            scope.Resolve<IChannelDataService>());
                         logger.LogInformation($"Channel processing ended");
                     }
                 }
@@ -175,15 +168,15 @@ namespace GoneViolet
             }
         }
 
-        private static async Task DownloadVideos(AppSettings appSettings, Channel channel, IVideoProcessor videoProcessor, IChannelDataService channelDataService, bool skipNonEmptyExistingBlobs)
+        private static async Task DownloadVideos(AppSettings appSettings, Channel channel, IVideoProcessor videoProcessor, IChannelDataService channelDataService)
         {
-            static async Task SaveVideos(ConcurrentQueue<Video> videos, Channel channel, IVideoProcessor videoProcessor, IChannelDataService channelDataService, bool skipNonEmptyExistingBlobs)
+            static async Task SaveVideos(ConcurrentQueue<Video> videos, Channel channel, IVideoProcessor videoProcessor, IChannelDataService channelDataService)
             {
                 Video video;
                 DateTime lastSnapshot = DateTime.UtcNow;
                 while (videos.TryDequeue(out video))
                 {
-                    await videoProcessor.SaveGoogleVideo(video, skipNonEmptyExistingBlobs);
+                    await videoProcessor.SaveGoogleVideo(video);
                     lock (channel)
                     {
                         channelDataService.SaveChannel(channel).Wait();
@@ -196,17 +189,17 @@ namespace GoneViolet
                 }
             }
             ConcurrentQueue<Video> videos = new ConcurrentQueue<Video>(
-                channel.Videos.Where(v => !string.IsNullOrEmpty(v.VideoId) && !v.IsStored && !(v.Skip ?? false)));
+                channel.Videos.Where(v => !string.IsNullOrEmpty(v.VideoId) && !(v.Skip ?? false)));
             List<Task> tasks = new List<Task>();
             short maxThreadCount = Math.Min(appSettings.MaxThreadCount ?? 4, (short)128);
             if (maxThreadCount > 1)
             {
                 for (int i = 0; i < maxThreadCount - 1; i += 1)
                 {
-                    tasks.Add(Task.Run(() => SaveVideos(videos, channel, videoProcessor, channelDataService, skipNonEmptyExistingBlobs).Wait()));
+                    tasks.Add(Task.Run(() => SaveVideos(videos, channel, videoProcessor, channelDataService).Wait()));
                 }
             }
-            await SaveVideos(videos, channel, videoProcessor, channelDataService, skipNonEmptyExistingBlobs);
+            await SaveVideos(videos, channel, videoProcessor, channelDataService);
             await Task.WhenAll(tasks);
         }
 
@@ -225,7 +218,7 @@ namespace GoneViolet
                 }
             }
             ConcurrentQueue<Video> videos = new ConcurrentQueue<Video>(
-                channel.Videos.Where(v => !string.IsNullOrEmpty(v.VideoId) && !v.IsAudioStored && !(v.Skip ?? false)));
+                channel.Videos.Where(v => !string.IsNullOrEmpty(v.VideoId) && !(v.Skip ?? false)));
             List<Task> tasks = new List<Task>();
             short maxThreadCount = Math.Min(appSettings.MaxThreadCount ?? 4, (short)128);
             if (maxThreadCount > 1)
