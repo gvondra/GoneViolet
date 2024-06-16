@@ -25,24 +25,27 @@ namespace GoneViolet
             Argument<string> channelOption = new Argument<string>(name: "channel");
             Option<string> channelId = new Option<string>(name: "--channel-id");
             Option<string> playlistId = new Option<string>(name: "--playlist-id");
+            Option<bool> manualDownloadUrl = new Option<bool>(name: "--manual-download-url");
 
             Command videoCommand = new Command("video", "Process channel video")
             {
                 channelOption,
                 channelId,
-                playlistId
+                playlistId,
+                manualDownloadUrl
             };
             videoCommand.SetHandler(
-                (opt, cId, lstID) => BeginVideoProcessing(appSettings, opt, cId, lstID), channelOption, channelId, playlistId);
+                (opt, cId, lstID, manUrl) => BeginVideoProcessing(appSettings, opt, cId, lstID, manUrl), channelOption, channelId, playlistId, manualDownloadUrl);
 
             Command audioCommand = new Command("audio", "Process channel mp3")
             {
                 channelOption,
                 channelId,
-                playlistId
+                playlistId,
+                manualDownloadUrl
             };
             audioCommand.SetHandler(
-                (opt, cId, lstID) => BeginAudioProcessing(appSettings, opt, cId, lstID), channelOption, channelId, playlistId);
+                (opt, cId, lstID, manUrl) => BeginAudioProcessing(appSettings, opt, cId, lstID, manUrl), channelOption, channelId, playlistId, manualDownloadUrl);
 
             RootCommand rootCommand = new RootCommand();
             rootCommand.AddCommand(videoCommand);
@@ -50,7 +53,7 @@ namespace GoneViolet
             await rootCommand.InvokeAsync(args);
         }
 
-        private static async Task BeginVideoProcessing(AppSettings appSettings, string channelTitle, string channelId, string playlistId)
+        private static async Task BeginVideoProcessing(AppSettings appSettings, string channelTitle, string channelId, string playlistId, bool manualDownloadUrl)
         {
             using (ILifetimeScope scope = DependencyInjection.ContainerFactory.BeginLifetimeScope())
             {
@@ -67,10 +70,12 @@ namespace GoneViolet
                     if (channel != null)
                     {
                         logger.LogInformation($"Channel processing started");
+                        IVideoProcessor videoProcessor = scope.Resolve<IVideoProcessor>();
+                        videoProcessor.ManualDownloadUrl = manualDownloadUrl;
                         await DownloadVideos(
                             appSettings,
                             channel,
-                            scope.Resolve<IVideoProcessor>(),
+                            videoProcessor,
                             scope.Resolve<IChannelDataService>());
                         logger.LogInformation($"Channel processing ended");
                     }
@@ -82,7 +87,7 @@ namespace GoneViolet
             }
         }
 
-        private static async Task BeginAudioProcessing(AppSettings appSettings, string channelTitle, string channelId, string playlistId)
+        private static async Task BeginAudioProcessing(AppSettings appSettings, string channelTitle, string channelId, string playlistId, bool manualDownloadUrl)
         {
             using (ILifetimeScope scope = DependencyInjection.ContainerFactory.BeginLifetimeScope())
             {
@@ -99,10 +104,12 @@ namespace GoneViolet
                     if (channel != null)
                     {
                         logger.LogInformation($"Channel processing started");
+                        IAudioProcessor audioProcessor = scope.Resolve<IAudioProcessor>();
+                        audioProcessor.ManualDownloadUrl = manualDownloadUrl;
                         await DownloadAudios(
                             appSettings,
                             channel,
-                            scope.Resolve<IAudioProcessor>(),
+                            audioProcessor,
                             scope.Resolve<IChannelDataService>());
                         logger.LogInformation($"Channel processing ended");
                     }
@@ -176,6 +183,13 @@ namespace GoneViolet
                 DateTime lastSnapshot = DateTime.UtcNow;
                 while (videos.TryDequeue(out video))
                 {
+                    if (await videoProcessor.UpdateIsStored(video))
+                    {
+                        lock (channel)
+                        {
+                            channelDataService.SaveChannel(channel).Wait();
+                        }
+                    }
                     await videoProcessor.SaveGoogleVideo(video);
                     lock (channel)
                     {
@@ -210,6 +224,13 @@ namespace GoneViolet
                 Video video;
                 while (videos.TryDequeue(out video))
                 {
+                    if (await audioProcessor.UpdateIsStored(video))
+                    {
+                        lock (channel)
+                        {
+                            channelDataService.SaveChannel(channel).Wait();
+                        }
+                    }
                     await audioProcessor.SaveGoogleAudio(video);
                     lock (channel)
                     {

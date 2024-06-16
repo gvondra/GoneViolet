@@ -12,6 +12,7 @@ namespace GoneViolet
 {
     public abstract class AudioVideoProessor
     {
+        private static readonly object _userInputLock = new { };
         private static readonly AsyncPolicy _circuitBreaker = Policy.Handle<Exception>()
             .AdvancedCircuitBreakerAsync(
             0.75,
@@ -40,11 +41,23 @@ namespace GoneViolet
             _blob = blob;
         }
 
+        public virtual bool ManualDownloadUrl { get; set; }
+
         protected AppSettings AppSettings { get; private init; }
 
         protected ILogger Logger { get; private init; }
 
         protected IYouTubeHtmlParser YouTubeHtmlParser { get; private init; }
+
+        public virtual async Task<bool> UpdateIsStored(Video video)
+        {
+            if (IsStored(video) && await ShouldDownload(video))
+            {
+                IsStored(video, false);
+                return true;
+            }
+            return false;
+        }
 
         protected abstract Task<string> GetGoogleAudioVideoUrl(string content, string videoId);
 
@@ -75,23 +88,30 @@ namespace GoneViolet
                     if (await ShouldDownload(video))
                     {
                         content = await GetContent(video);
-                        googleVideoUrl = await GetGoogleAudioVideoUrl(content, video.VideoId);
-                        video.Tags = YouTubeHtmlParser.GetTags(content);
-                    }
-                    if (!string.IsNullOrEmpty(googleVideoUrl))
-                    {
-                        await _retry.ExecuteAsync(async () =>
+                        if (ManualDownloadUrl)
                         {
-                            Logger.LogInformation($"Downloading {video.Title} to blob {BlobName(video)}");
-                            using Stream blobStream = await _blob.OpenWrite(AppSettings, BlobName(video), contentType: ContentType());
-                            await _downloader.Download(googleVideoUrl, blobStream);
-                        });
-                        IsStored(video, true);
-                        video.Skip = null;
-                    }
-                    else
-                    {
-                        Logger.LogWarning($"Video url not found for \"{video.Title}\"");
+                            googleVideoUrl = GetManualDownloadUrl(video);
+                        }
+                        else
+                        {
+                            googleVideoUrl = await GetGoogleAudioVideoUrl(content, video.VideoId);
+                        }
+                        video.Tags = YouTubeHtmlParser.GetTags(content);
+                        if (!string.IsNullOrEmpty(googleVideoUrl))
+                        {
+                            await _retry.ExecuteAsync(async () =>
+                            {
+                                Logger.LogInformation($"Downloading {video.Title} to blob {BlobName(video)}");
+                                using Stream blobStream = await _blob.OpenWrite(AppSettings, BlobName(video), contentType: ContentType());
+                                await _downloader.Download(googleVideoUrl, blobStream);
+                            });
+                            IsStored(video, true);
+                            video.Skip = null;
+                        }
+                        else
+                        {
+                            Logger.LogWarning($"Video url not found for \"{video.Title}\"");
+                        }
                     }
                 });
             }
@@ -120,10 +140,13 @@ namespace GoneViolet
 
         protected Task<string> GetContent(Video video)
         {
-            string pageUrl = string.Format(CultureInfo.InvariantCulture, AppSettings.YouTubeUrlTemplate, video.VideoId);
+            string pageUrl = GetPageUrl(video);
             Logger.LogInformation($"Downloading and parsing web page data {pageUrl}");
             return _downloader.DownloadWebContent(pageUrl);
         }
+
+        protected string GetPageUrl(Video video)
+            => string.Format(CultureInfo.InvariantCulture, AppSettings.YouTubeUrlTemplate, video.VideoId);
 
         protected async Task LogContent(string videoId, string content)
         {
@@ -180,6 +203,17 @@ namespace GoneViolet
             catch (Exception ex)
             {
                 Logger.LogError(ex, ex.Message);
+            }
+        }
+
+        private string GetManualDownloadUrl(Video video)
+        {
+            lock (_userInputLock)
+            {
+                string pageUrl = GetPageUrl(video);
+                Console.WriteLine("\nEnter download url for");
+                Console.WriteLine(pageUrl);
+                return Console.ReadLine();
             }
         }
     }
