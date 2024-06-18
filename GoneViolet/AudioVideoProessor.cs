@@ -4,6 +4,7 @@ using Polly;
 using Polly.CircuitBreaker;
 using System.Globalization;
 using System.IO;
+using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -20,7 +21,7 @@ namespace GoneViolet
             10,
             TimeSpan.MaxValue);
         private static readonly AsyncPolicy _retry = Policy.WrapAsync(
-            Policy.Handle<HttpRequestException>()
+            Policy.Handle<HttpRequestException>(HttpRequestExceptionHandler)
             .WaitAndRetryAsync(new TimeSpan[] { TimeSpan.FromSeconds(5) }),
             Policy.Handle<IOException>()
             .WaitAndRetryAsync(new TimeSpan[] { TimeSpan.FromSeconds(5) }));
@@ -205,6 +206,9 @@ namespace GoneViolet
                 Logger.LogError(ex, ex.Message);
             }
         }
+
+        private static bool HttpRequestExceptionHandler(HttpRequestException exception)
+            => exception.StatusCode != HttpStatusCode.Forbidden;
 
         private string GetManualDownloadUrl(Video video)
         {
