@@ -26,26 +26,29 @@ namespace GoneViolet
             Option<string> channelId = new Option<string>(name: "--channel-id");
             Option<string> playlistId = new Option<string>(name: "--playlist-id");
             Option<bool> manualDownloadUrl = new Option<bool>(name: "--manual-download-url");
+            Option<bool> saveTube = new Option<bool>(name: "--save-tube");
 
             Command videoCommand = new Command("video", "Process channel video")
             {
                 channelOption,
                 channelId,
                 playlistId,
-                manualDownloadUrl
+                manualDownloadUrl,
+                saveTube
             };
             videoCommand.SetHandler(
-                (opt, cId, lstID, manUrl) => BeginVideoProcessing(appSettings, opt, cId, lstID, manUrl), channelOption, channelId, playlistId, manualDownloadUrl);
+                (opt, cId, lstID, manUrl, svTube) => BeginVideoProcessing(appSettings, opt, cId, lstID, manUrl, svTube), channelOption, channelId, playlistId, manualDownloadUrl, saveTube);
 
             Command audioCommand = new Command("audio", "Process channel mp3")
             {
                 channelOption,
                 channelId,
                 playlistId,
-                manualDownloadUrl
+                manualDownloadUrl,
+                saveTube
             };
             audioCommand.SetHandler(
-                (opt, cId, lstID, manUrl) => BeginAudioProcessing(appSettings, opt, cId, lstID, manUrl), channelOption, channelId, playlistId, manualDownloadUrl);
+                (opt, cId, lstID, manUrl, svTube) => BeginAudioProcessing(appSettings, opt, cId, lstID, manUrl, svTube), channelOption, channelId, playlistId, manualDownloadUrl, saveTube);
 
             RootCommand rootCommand = new RootCommand();
             rootCommand.AddCommand(videoCommand);
@@ -53,7 +56,7 @@ namespace GoneViolet
             await rootCommand.InvokeAsync(args);
         }
 
-        private static async Task BeginVideoProcessing(AppSettings appSettings, string channelTitle, string channelId, string playlistId, bool manualDownloadUrl)
+        private static async Task BeginVideoProcessing(AppSettings appSettings, string channelTitle, string channelId, string playlistId, bool manualDownloadUrl, bool saveTube)
         {
             using (ILifetimeScope scope = DependencyInjection.ContainerFactory.BeginLifetimeScope())
             {
@@ -71,7 +74,8 @@ namespace GoneViolet
                     {
                         logger.LogInformation($"Channel processing started");
                         IVideoProcessor videoProcessor = scope.Resolve<IVideoProcessor>();
-                        videoProcessor.ManualDownloadUrl = manualDownloadUrl;
+                        videoProcessor.ManualDownloadUrl = manualDownloadUrl && !saveTube;
+                        videoProcessor.SaveTube = saveTube;
                         await DownloadVideos(
                             appSettings,
                             channel,
@@ -87,7 +91,7 @@ namespace GoneViolet
             }
         }
 
-        private static async Task BeginAudioProcessing(AppSettings appSettings, string channelTitle, string channelId, string playlistId, bool manualDownloadUrl)
+        private static async Task BeginAudioProcessing(AppSettings appSettings, string channelTitle, string channelId, string playlistId, bool manualDownloadUrl, bool saveTube)
         {
             using (ILifetimeScope scope = DependencyInjection.ContainerFactory.BeginLifetimeScope())
             {
@@ -105,7 +109,8 @@ namespace GoneViolet
                     {
                         logger.LogInformation($"Channel processing started");
                         IAudioProcessor audioProcessor = scope.Resolve<IAudioProcessor>();
-                        audioProcessor.ManualDownloadUrl = manualDownloadUrl;
+                        audioProcessor.ManualDownloadUrl = manualDownloadUrl && !saveTube;
+                        audioProcessor.SaveTube = saveTube;
                         await DownloadAudios(
                             appSettings,
                             channel,

@@ -2,12 +2,14 @@
 using Microsoft.Extensions.Logging;
 using Polly;
 using Polly.CircuitBreaker;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web;
 
 namespace GoneViolet
 {
@@ -43,6 +45,8 @@ namespace GoneViolet
         }
 
         public virtual bool ManualDownloadUrl { get; set; }
+
+        public virtual bool SaveTube { get; set; }
 
         protected AppSettings AppSettings { get; private init; }
 
@@ -92,6 +96,10 @@ namespace GoneViolet
                         if (ManualDownloadUrl)
                         {
                             googleVideoUrl = GetManualDownloadUrl(video);
+                        }
+                        else if (SaveTube)
+                        {
+                            googleVideoUrl = GetSaveTubeDownloadUrl(video);
                         }
                         else
                         {
@@ -217,6 +225,28 @@ namespace GoneViolet
                 string pageUrl = GetPageUrl(video);
                 Console.WriteLine("\nEnter download url for");
                 Console.WriteLine(pageUrl);
+                return Console.ReadLine();
+            }
+        }
+
+        private string GetSaveTubeDownloadUrl(Video video)
+        {
+            string pageUrl = string.Format(
+                CultureInfo.InvariantCulture,
+                "{0}{1}",
+                AppSettings.SaveTubeBaseAddress,
+                HttpUtility.UrlEncode(GetPageUrl(video)));
+            lock (_userInputLock)
+            {
+                Console.WriteLine($"Launched: {pageUrl}");
+                Console.WriteLine(video.Title);
+                ProcessStartInfo startInfo = new ProcessStartInfo
+                {
+                    FileName = pageUrl,
+                    UseShellExecute = true,
+                    Verb = "open"
+                };
+                Process.Start(startInfo);
                 return Console.ReadLine();
             }
         }

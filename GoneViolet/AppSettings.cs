@@ -6,6 +6,7 @@
         public string GoogleApiKey { get; set; }
         public string YouTubeDataApiBaseAddress { get; set; }
         public string YouTubeUrlTemplate { get; set; }
+        public string SaveTubeBaseAddress { get; set; }
         public string WorkingDirectory { get; set; }
         public string ChannelDataFile { get; set; }
         public string PlaylistsDataFile { get; set; }
